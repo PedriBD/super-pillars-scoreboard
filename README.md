@@ -7,9 +7,9 @@ Scoreboard-tracker til Fortnite-gamemoden Super Pillars. Statisk side (GitHub Pa
 - Hele siden er låst bag en fælles adgangskode (`DanskeMestre2026`). Adgangskoden tjekkes serverside i Supabase og huskes i browseren, så man kun skal indtaste den én gang pr. enhed.
 - Man opretter et nyt opgør, hvilket genererer en kort spil-kode (fx `K7QX`) og opdaterer URL'en til `?room=K7QX`.
 - Alle der åbner det link, eller indtaster koden manuelt, deler samme opgør — og kan tilføje spillere til rosteret løbende.
-- I spiller en hel kamp i Fortnite selv (fx til en har vundet 15 runder), og først når kampen er helt slut, indtaster I slutresultatet: runde-sejre, samlet score, eliminations og damage dealt pr. spiller. Der er ingen løbende runde-for-runde-indtastning undervejs.
-- Vinderen af kampen er den med flest runde-sejre (ved lighed afgør samlet score).
-- Hver registreret kamp gemmes i kamp-historikken, og "All-time stilling" viser den samlede stilling — flest kampe vundet, flest runde-sejre, mest score osv. — på tværs af alle kampe I nogensinde har spillet i det opgør.
+- I spiller en hel kamp i Fortnite selv (fx til en har vundet 15 runder), og først når kampen er helt slut, indtaster I slutresultatet: runde-sejre, eliminations og damage dealt pr. spiller. Der er ingen løbende runde-for-runde-indtastning undervejs.
+- Vinderen af kampen er den med flest runde-sejre (ved lighed afgør eliminations, dernæst damage).
+- Hver registreret kamp gemmes i kamp-historikken, og "All-time stilling" viser den samlede stilling — flest kampe vundet, flest runde-sejre, flest eliminations osv. — på tværs af alle kampe I nogensinde har spillet i det opgør.
 
 ## 1. Sæt Supabase op (gratis)
 

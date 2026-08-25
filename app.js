@@ -95,7 +95,7 @@ function computeStandings() {
     byId[p.id] = {
       id: p.id, name: p.name,
       matchesPlayed: 0, matchesWon: 0,
-      totalRoundWins: 0, totalScore: 0, totalElim: 0, totalDmg: 0,
+      totalRoundWins: 0, totalElim: 0, totalDmg: 0,
     };
   });
   state.matches.forEach((m) => {
@@ -105,7 +105,6 @@ function computeStandings() {
       const row = byId[p.id];
       row.matchesPlayed += 1;
       row.totalRoundWins += Number(r.roundWins) || 0;
-      row.totalScore += Number(r.score) || 0;
       row.totalElim += Number(r.elim) || 0;
       row.totalDmg += Number(r.dmg) || 0;
     });
@@ -115,7 +114,7 @@ function computeStandings() {
   list.sort((a, b) => {
     if (b.matchesWon !== a.matchesWon) return b.matchesWon - a.matchesWon;
     if (b.totalRoundWins !== a.totalRoundWins) return b.totalRoundWins - a.totalRoundWins;
-    if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+    if (b.totalElim !== a.totalElim) return b.totalElim - a.totalElim;
     return a.name.localeCompare(b.name);
   });
   return list;
@@ -280,7 +279,6 @@ function renderLeaderboard() {
             '<div class="lb-stats">' +
             "<span>Kampe <b>" + s.matchesPlayed + "</b></span>" +
             "<span>Runde-sejre " + s.totalRoundWins + "</span>" +
-            "<span>Score " + s.totalScore + "</span>" +
             '<span class="elim">Elim ' + s.totalElim + "</span>" +
             '<span class="dmg">Dmg ' + s.totalDmg + "</span>" +
             "</div>" +
@@ -301,7 +299,6 @@ function renderMatchForm() {
         '<tr data-player="' + p.id + '">' +
         '<td class="name">' + escapeHtml(p.name) + "</td>" +
         '<td class="num"><input type="number" min="0" step="1" class="f-wins" placeholder="0"></td>' +
-        '<td class="num"><input type="number" min="0" step="1" class="f-score" placeholder="0"></td>' +
         '<td class="num"><input type="number" min="0" step="1" class="f-elim" placeholder="0"></td>' +
         '<td class="num"><input type="number" min="0" step="1" class="f-dmg" placeholder="0"></td>' +
         "</tr>"
@@ -322,12 +319,11 @@ matchForm.addEventListener("submit", (e) => {
   rows.forEach((row) => {
     const pid = row.getAttribute("data-player");
     const roundWins = Number(row.querySelector(".f-wins").value) || 0;
-    const score = Number(row.querySelector(".f-score").value) || 0;
     const elim = Number(row.querySelector(".f-elim").value) || 0;
     const dmg = Number(row.querySelector(".f-dmg").value) || 0;
-    if (roundWins || score || elim || dmg) anyInput = true;
-    results[pid] = { roundWins, score, elim, dmg };
-    const entry = { pid, roundWins, score, elim, dmg };
+    if (roundWins || elim || dmg) anyInput = true;
+    results[pid] = { roundWins, elim, dmg };
+    const entry = { pid, roundWins, elim, dmg };
     if (!best) best = [entry];
     else if (roundWins > best[0].roundWins) best = [entry];
     else if (roundWins === best[0].roundWins) best.push(entry);
@@ -342,8 +338,14 @@ matchForm.addEventListener("submit", (e) => {
   if (best && best.length === 1 && best[0].roundWins > 0) {
     winnerId = best[0].pid;
   } else if (best && best.length > 1 && best[0].roundWins > 0) {
-    const byScore = best.slice().sort((a, b) => b.score - a.score);
-    if (byScore[0].score > byScore[1].score) winnerId = byScore[0].pid;
+    const byElim = best.slice().sort((a, b) => b.elim - a.elim);
+    if (byElim[0].elim > byElim[1].elim) {
+      winnerId = byElim[0].pid;
+    } else {
+      const tiedElim = byElim.filter((e) => e.elim === byElim[0].elim);
+      const byDmg = tiedElim.slice().sort((a, b) => b.dmg - a.dmg);
+      if (byDmg.length === 1 || byDmg[0].dmg > byDmg[1].dmg) winnerId = byDmg[0].pid;
+    }
   }
 
   state.matches.push({ id: uid(), playedAt: new Date().toISOString(), results, winnerId });
@@ -380,7 +382,7 @@ function renderHistory() {
           (r) =>
             '<div class="match-player-row' + (r.pid === m.winnerId ? " is-winner" : "") + '">' +
             '<span class="mp-name">' + escapeHtml(r.name) + (r.pid === m.winnerId ? " 🏆" : "") + "</span>" +
-            "<span>" + r.roundWins + " sejre &middot; " + r.score + " score</span>" +
+            "<span>" + r.roundWins + " sejre &middot; " + r.elim + " elim &middot; " + r.dmg + " dmg</span>" +
             "</div>"
         )
         .join("");
