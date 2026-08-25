@@ -316,8 +316,11 @@ function renderLeaderboard() {
     ? standings
         .map((s, i) => {
           const isLeader = i === 0 && s.matchesWon > 0;
+          const isSecond = i === 1 && s.matchesWon > 0;
+          const isThird = i === 2 && s.matchesWon > 0;
+          const rankClass = isLeader ? " is-leader" : isSecond ? " is-second" : isThird ? " is-third" : "";
           return (
-            '<div class="lb-row' + (isLeader ? " is-leader" : "") + '" data-player="' + s.id + '" role="button" tabindex="0">' +
+            '<div class="lb-row' + rankClass + '" data-player="' + s.id + '" role="button" tabindex="0">' +
             '<div class="lb-rank">' + (i + 1) + "</div>" +
             '<div class="lb-main">' +
             '<div class="lb-name">' + escapeHtml(s.name) + (isLeader ? " 🏆" : "") + "</div>" +
