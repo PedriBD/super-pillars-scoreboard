@@ -236,6 +236,36 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   margin: 10px 0 0;
 }
 
+.gate-welcome {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.gate-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: 50% 88%;
+  border: 2px solid var(--accent-dim);
+  box-shadow: 0 0 0 4px var(--accent-soft), 0 0 24px -6px var(--accent);
+  flex: none;
+}
+.gate-welcome-text {
+  font-family: "Rajdhani", sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--text);
+  margin: 0;
+  text-wrap: balance;
+}
+.gate-welcome-sub {
+  font-size: 0.84rem;
+  color: var(--text-dim);
+  margin: 3px 0 0;
+}
+
 /* ---------- Session list ---------- */
 .session-list {
   display: flex;
