@@ -60,13 +60,12 @@ const passwordInput = document.getElementById("passwordInput");
 const passwordError = document.getElementById("passwordError");
 const appRootEl = document.getElementById("appRoot");
 
-const roomGate = document.getElementById("roomGate");
-const createRoomBtn = document.getElementById("createRoomBtn");
-const joinRoomForm = document.getElementById("joinRoomForm");
-const joinRoomCode = document.getElementById("joinRoomCode");
-const roomPill = document.getElementById("roomPill");
-const roomPillText = document.getElementById("roomPillText");
-const copyLinkBtn = document.getElementById("copyLinkBtn");
+const sessionListPanel = document.getElementById("sessionListPanel");
+const sessionList = document.getElementById("sessionList");
+const createSessionForm = document.getElementById("createSessionForm");
+const newSessionName = document.getElementById("newSessionName");
+const backToListBtn = document.getElementById("backToListBtn");
+const mastheadSub = document.getElementById("mastheadSub");
 
 const gamePanels = document.getElementById("gamePanels");
 const statusPill = document.getElementById("statusPill");
@@ -160,39 +159,99 @@ function normalizeState(raw) {
   };
 }
 
-async function joinRoom(code) {
-  currentRoom = code;
-  setRoomInUrl(code);
-  roomGate.hidden = true;
+/* ---------------- Session list ---------------- */
+async function loadSessionList() {
+  sessionList.innerHTML = '<span class="setup-empty">Henter opgør…</span>';
 
   const { data, error } = await supabase
     .from("games")
-    .select("state")
-    .eq("room_code", code)
-    .maybeSingle();
+    .select("room_code, name, state, updated_at")
+    .order("updated_at", { ascending: false });
 
   if (error) {
-    console.warn("Kunne ikke hente spil:", error);
-    alert("Kunne ikke oprette forbindelse til spillet. Tjek Supabase-opsætningen (se README).");
-    leaveRoom();
+    console.warn("Kunne ikke hente opgør:", error);
+    sessionList.innerHTML = '<span class="setup-empty">Kunne ikke hente opgør. Tjek Supabase-opsætningen (se README).</span>';
     return;
   }
 
-  if (data && data.state) {
-    state = normalizeState(data.state);
-  } else {
-    state = { ...DEFAULT_STATE };
-    await supabase.from("games").upsert({ room_code: code, state, updated_at: new Date().toISOString() });
+  if (!data || !data.length) {
+    sessionList.innerHTML = '<span class="setup-empty">Ingen opgør endnu — opret det første herunder.</span>';
+    return;
   }
 
+  sessionList.innerHTML = data
+    .map((row) => {
+      const s = normalizeState(row.state);
+      const label = row.name && row.name.trim() ? row.name : "Unavngivet opgør";
+      return (
+        '<div class="session-card" data-room="' + row.room_code + '" role="button" tabindex="0">' +
+        '<div><p class="session-card-name">' + escapeHtml(label) + "</p>" +
+        '<p class="session-card-meta">' + s.players.length + " spillere &middot; " + s.matches.length + " kampe &middot; " + formatDateTime(row.updated_at) + "</p></div>" +
+        '<svg class="session-card-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>' +
+        "</div>"
+      );
+    })
+    .join("");
+}
+
+sessionList.addEventListener("click", (e) => {
+  const card = e.target.closest("[data-room]");
+  if (card) joinRoom(card.getAttribute("data-room"));
+});
+sessionList.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const card = e.target.closest("[data-room]");
+  if (!card) return;
+  e.preventDefault();
+  joinRoom(card.getAttribute("data-room"));
+});
+
+createSessionForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = newSessionName.value.trim();
+  if (!name) return;
+  newSessionName.value = "";
+  const code = generateRoomCode();
+  const { error } = await supabase
+    .from("games")
+    .upsert({ room_code: code, name, state: { ...DEFAULT_STATE }, updated_at: new Date().toISOString() });
+  if (error) {
+    console.warn("Kunne ikke oprette opgør:", error);
+    alert("Kunne ikke oprette opgøret. Tjek Supabase-opsætningen (se README).");
+    return;
+  }
+  joinRoom(code);
+});
+
+/* ---------------- Join / leave a session ---------------- */
+async function joinRoom(code) {
+  currentRoom = code;
+  setRoomInUrl(code);
+  sessionListPanel.hidden = true;
+  backToListBtn.hidden = false;
+
+  const { data, error } = await supabase
+    .from("games")
+    .select("state, name")
+    .eq("room_code", code)
+    .maybeSingle();
+
+  if (error || !data) {
+    console.warn("Kunne ikke hente opgør:", error);
+    alert("Kunne ikke finde det opgør. Det kan være slettet.");
+    backToSessions();
+    return;
+  }
+
+  state = normalizeState(data.state);
+  mastheadSub.textContent = data.name && data.name.trim() ? data.name : "Unavngivet opgør";
+
   subscribeRoom(code);
-  roomPill.hidden = false;
-  roomPillText.textContent = "Spil " + code;
   gamePanels.hidden = false;
   renderAll();
 }
 
-function leaveRoom() {
+function backToSessions() {
   closePlayerDetail();
   if (channel) {
     supabase.removeChannel(channel);
@@ -201,36 +260,16 @@ function leaveRoom() {
   currentRoom = null;
   state = { ...DEFAULT_STATE };
   clearRoomInUrl();
-  roomPill.hidden = true;
-  roomGate.hidden = false;
+  mastheadSub.textContent = "Scoreboard";
+  backToListBtn.hidden = true;
   gamePanels.hidden = true;
   statusPill.hidden = true;
+  sessionListPanel.hidden = false;
+  loadSessionList();
 }
 
-createRoomBtn.addEventListener("click", () => {
-  joinRoom(generateRoomCode());
-});
-
-joinRoomForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const code = joinRoomCode.value.trim().toUpperCase();
-  if (!code) return;
-  joinRoomCode.value = "";
-  joinRoom(code);
-});
-
-copyLinkBtn.addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText(location.href);
-    const original = roomPillText.textContent;
-    roomPillText.textContent = "Link kopieret!";
-    setTimeout(() => { roomPillText.textContent = original; }, 1500);
-  } catch (e) {
-    alert("Kunne ikke kopiere linket. Spil-koden er: " + currentRoom);
-  }
-});
-
-leaveRoomBtn.addEventListener("click", leaveRoom);
+backToListBtn.addEventListener("click", backToSessions);
+leaveRoomBtn.addEventListener("click", backToSessions);
 
 /* ---------------- Players ---------------- */
 function renderPlayers() {
@@ -522,12 +561,17 @@ undoMatchBtn.addEventListener("click", () => {
   persist();
 });
 
-/* ---------------- Reset ---------------- */
-resetBtn.addEventListener("click", () => {
-  if (!confirm("Nulstil hele opgøret (spillere og al kamp-historik)?")) return;
-  closePlayerDetail();
-  state = { ...DEFAULT_STATE };
-  persist();
+/* ---------------- Delete session ---------------- */
+resetBtn.addEventListener("click", async () => {
+  if (!confirm("Slet hele dette opgør permanent (spillere og al kamp-historik)?")) return;
+  const code = currentRoom;
+  const { error } = await supabase.from("games").delete().eq("room_code", code);
+  if (error) {
+    console.warn("Kunne ikke slette opgøret:", error);
+    alert("Kunne ikke slette opgøret.");
+    return;
+  }
+  backToSessions();
 });
 
 /* ---------------- Top-level render ---------------- */
@@ -562,7 +606,8 @@ function startApp() {
   if (initialRoom) {
     joinRoom(initialRoom);
   } else {
-    roomGate.hidden = false;
+    sessionListPanel.hidden = false;
+    loadSessionList();
   }
 }
 

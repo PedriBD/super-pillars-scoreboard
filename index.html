@@ -16,16 +16,10 @@
     <header class="masthead">
       <div>
         <p class="masthead-title">Super Pillars</p>
-        <p class="masthead-sub">Scoreboard</p>
+        <p class="masthead-sub" id="mastheadSub">Scoreboard</p>
       </div>
       <div class="masthead-status">
-        <div class="status-pill" id="roomPill" hidden>
-          <span class="status-dot"></span>
-          <span id="roomPillText"></span>
-          <button type="button" class="btn-icon" id="copyLinkBtn" title="Kopiér spillink" aria-label="Kopiér spillink">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          </button>
-        </div>
+        <button type="button" class="btn-ghost" id="backToListBtn" hidden>&larr; Opgør</button>
         <div class="status-pill" id="statusPill" hidden>
           <span class="status-dot"></span>
           <span id="statusText"></span>
@@ -46,25 +40,15 @@
 
     <div id="appRoot" hidden>
 
-    <!-- ROOM GATE -->
-    <section class="panel" id="roomGate">
-      <p class="panel-title">Start eller find et spil</p>
-      <p class="panel-hint">Opret et nyt opgør og send linket til vennerne, eller indtast en spil-kode du har fået.</p>
-      <div class="gate-grid">
-        <div class="gate-card">
-          <p class="gate-card-title">Nyt spil</p>
-          <p class="gate-card-hint">Genererer en kode og et link I kan dele.</p>
-          <button class="btn-primary" id="createRoomBtn" type="button">Opret nyt spil</button>
-        </div>
-        <div class="gate-card">
-          <p class="gate-card-title">Deltag i spil</p>
-          <p class="gate-card-hint">Indtast koden I har aftalt.</p>
-          <form id="joinRoomForm" class="join-row">
-            <input type="text" id="joinRoomCode" placeholder="fx K7QX" maxlength="8" autocomplete="off">
-            <button type="submit" class="btn-ghost">Deltag</button>
-          </form>
-        </div>
-      </div>
+    <!-- SESSION LIST -->
+    <section class="panel" id="sessionListPanel">
+      <p class="panel-title">Opgør</p>
+      <p class="panel-hint">Vælg et opgør, eller start et nyt.</p>
+      <div class="session-list" id="sessionList"></div>
+      <form id="createSessionForm" class="join-row" style="margin-top: 14px;">
+        <input type="text" id="newSessionName" placeholder="Navn på nyt opgør, fx Fredagsgutterne" maxlength="40" autocomplete="off">
+        <button type="submit" class="btn-primary">Opret nyt opgør</button>
+      </form>
     </section>
 
     <!-- MAIN APP (shown once a room is joined) -->
@@ -122,12 +106,12 @@
       </section>
 
       <div class="form-actions">
-        <button class="btn-danger" id="resetBtn">Nulstil helt</button>
-        <button type="button" class="btn-ghost" id="leaveRoomBtn">Skift spil</button>
+        <button class="btn-danger" id="resetBtn">Slet dette opgør</button>
+        <button type="button" class="btn-ghost" id="leaveRoomBtn">&larr; Tilbage til opgør</button>
       </div>
     </div>
 
-    <p class="footer-note" id="footerNote">Synkroniseres live på tværs af enheder via samme spil-kode.</p>
+    <p class="footer-note" id="footerNote">Synkroniseres live på tværs af enheder for alle med adgangskoden.</p>
     </div>
   </div>
 

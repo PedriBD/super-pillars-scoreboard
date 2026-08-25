@@ -5,8 +5,8 @@ Scoreboard-tracker til Fortnite-gamemoden Super Pillars. Statisk side (GitHub Pa
 ## Sådan virker det
 
 - Hele siden er låst bag en fælles adgangskode (`DanskeMestre2026`). Adgangskoden tjekkes serverside i Supabase og huskes i browseren, så man kun skal indtaste den én gang pr. enhed.
-- Man opretter et nyt opgør, hvilket genererer en kort spil-kode (fx `K7QX`) og opdaterer URL'en til `?room=K7QX`.
-- Alle der åbner det link, eller indtaster koden manuelt, deler samme opgør — og kan tilføje spillere til rosteret løbende.
+- Forsiden viser en liste over alle eksisterende opgør (fx "Fredagsgutterne", "Lørdagsturnering") — klik ind på ét, eller opret et nyt med et navn. Ingen koder at huske eller dele, siden hele siden allerede er beskyttet af adgangskoden.
+- Alle med adgangskoden ser samme liste og kan gå ind i et opgør og tilføje spillere til rosteret løbende.
 - Spillerrosteret er delt for hele opgøret, men det er ikke nødvendigvis de samme spillere hver kamp — i kamp-formularen afkrydser I hvem der faktisk var med denne gang, så kun deres stats og kamp-tælling opdateres.
 - I spiller en hel kamp i Fortnite selv (fx til en har vundet 15 runder), og først når kampen er helt slut, indtaster I slutresultatet: runde-sejre, eliminations og damage dealt pr. spiller. Der er ingen løbende runde-for-runde-indtastning undervejs.
 - Vinderen af kampen er den med flest runde-sejre (ved lighed afgør eliminations, dernæst damage).
@@ -21,6 +21,7 @@ Scoreboard-tracker til Fortnite-gamemoden Super Pillars. Statisk side (GitHub Pa
    ```sql
    create table if not exists games (
      room_code text primary key,
+     name text,
      state jsonb not null,
      updated_at timestamptz not null default now()
    );
@@ -30,11 +31,19 @@ Scoreboard-tracker til Fortnite-gamemoden Super Pillars. Statisk side (GitHub Pa
    create policy "public read" on games for select using (true);
    create policy "public insert" on games for insert with check (true);
    create policy "public update" on games for update using (true);
+   create policy "public delete" on games for delete using (true);
 
    alter publication supabase_realtime add table games;
    ```
 
-   Dette gør tabellen offentligt læs-/skrivbar (uden login), afgrænset i praksis af at spil-koden er tilfældig og ikke deles offentligt. Fint til en scoreboard-app blandt venner — ikke egnet hvis I vil beskytte mod alle der gætter koden.
+   Dette gør tabellen offentligt læs-/skrivbar (uden login) — det er adgangskoden på selve siden (næste punkt) der er den reelle beskyttelse, ikke hemmelige koder pr. opgør.
+
+   Har du allerede oprettet `games`-tabellen tidligere, skal du blot køre denne tilføjelse for at understøtte navngivne opgør og sletning:
+
+   ```sql
+   alter table games add column if not exists name text;
+   create policy "public delete" on games for delete using (true);
+   ```
 
 3. Kør derefter dette for adgangskode-beskyttelsen af selve siden (kør det i samme SQL Editor):
 
