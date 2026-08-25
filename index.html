@@ -84,13 +84,13 @@
 
       <section class="panel">
         <p class="panel-title">All-time stilling</p>
-        <p class="panel-hint" id="lbHint">Samlet på tværs af alle afsluttede kampe.</p>
+        <p class="panel-hint" id="lbHint">Samlet på tværs af alle afsluttede kampe. Klik en spiller for detaljer.</p>
         <div class="leaderboard" id="leaderboard"></div>
       </section>
 
       <section class="panel" id="matchEntryPanel">
         <p class="panel-title">Registrér afsluttet kamp</p>
-        <p class="panel-hint">Når en spiller har nået det aftalte antal runde-sejre, indtast slutresultatet for hele kampen her.</p>
+        <p class="panel-hint">Afkryds hvem der var med i denne kamp, og indtast slutresultatet for hele kampen.</p>
         <form id="matchForm">
           <table class="round-table">
             <thead>
@@ -128,6 +128,15 @@
     </div>
 
     <p class="footer-note" id="footerNote">Synkroniseres live på tværs af enheder via samme spil-kode.</p>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="playerModalOverlay" hidden>
+    <div class="modal panel" id="playerModal" role="dialog" aria-modal="true" aria-labelledby="playerModalName">
+      <button type="button" class="btn-icon modal-close" id="playerModalClose" aria-label="Luk">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div id="playerModalContent"></div>
     </div>
   </div>
 

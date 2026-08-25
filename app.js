@@ -88,6 +88,11 @@ const undoMatchBtn = document.getElementById("undoMatchBtn");
 const resetBtn = document.getElementById("resetBtn");
 const leaveRoomBtn = document.getElementById("leaveRoomBtn");
 
+const playerModalOverlay = document.getElementById("playerModalOverlay");
+const playerModal = document.getElementById("playerModal");
+const playerModalContent = document.getElementById("playerModalContent");
+const playerModalClose = document.getElementById("playerModalClose");
+
 /* ---------------- All-time standings ---------------- */
 function computeStandings() {
   const byId = {};
@@ -188,6 +193,7 @@ async function joinRoom(code) {
 }
 
 function leaveRoom() {
+  closePlayerDetail();
   if (channel) {
     supabase.removeChannel(channel);
     channel = null;
@@ -272,7 +278,7 @@ function renderLeaderboard() {
         .map((s, i) => {
           const isLeader = i === 0 && s.matchesWon > 0;
           return (
-            '<div class="lb-row' + (isLeader ? " is-leader" : "") + '">' +
+            '<div class="lb-row' + (isLeader ? " is-leader" : "") + '" data-player="' + s.id + '" role="button" tabindex="0">' +
             '<div class="lb-rank">' + (i + 1) + "</div>" +
             '<div class="lb-main">' +
             '<div class="lb-name">' + escapeHtml(s.name) + (isLeader ? " 🏆" : "") + "</div>" +
@@ -291,13 +297,117 @@ function renderLeaderboard() {
     : '<span class="setup-empty">Tilføj spillere og registrér en kamp for at se stillingen.</span>';
 }
 
+leaderboard.addEventListener("click", (e) => {
+  const row = e.target.closest("[data-player]");
+  if (row) openPlayerDetail(row.getAttribute("data-player"));
+});
+leaderboard.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const row = e.target.closest("[data-player]");
+  if (!row) return;
+  e.preventDefault();
+  openPlayerDetail(row.getAttribute("data-player"));
+});
+
+/* ---------------- Player detail modal ---------------- */
+function computePlayerDetail(pid) {
+  const player = state.players.find((p) => p.id === pid);
+  if (!player) return null;
+
+  const playerMatches = state.matches
+    .filter((m) => m.results[pid])
+    .map((m) => ({ ...m, r: m.results[pid] }));
+
+  const matchesPlayed = playerMatches.length;
+  const matchesWon = playerMatches.filter((m) => m.winnerId === pid).length;
+  const totalRoundWins = playerMatches.reduce((sum, m) => sum + (Number(m.r.roundWins) || 0), 0);
+  const totalElim = playerMatches.reduce((sum, m) => sum + (Number(m.r.elim) || 0), 0);
+  const totalDmg = playerMatches.reduce((sum, m) => sum + (Number(m.r.dmg) || 0), 0);
+
+  const avg = (total) => (matchesPlayed ? total / matchesPlayed : 0);
+
+  const bestElimMatch = playerMatches.slice().sort((a, b) => b.r.elim - a.r.elim)[0] || null;
+  const bestDmgMatch = playerMatches.slice().sort((a, b) => b.r.dmg - a.r.dmg)[0] || null;
+
+  return {
+    player, matchesPlayed, matchesWon,
+    winRate: matchesPlayed ? Math.round((matchesWon / matchesPlayed) * 100) : 0,
+    totalRoundWins, totalElim, totalDmg,
+    avgRoundWins: avg(totalRoundWins), avgElim: avg(totalElim), avgDmg: avg(totalDmg),
+    bestElimMatch, bestDmgMatch,
+    recentMatches: playerMatches.slice().reverse().slice(0, 8),
+  };
+}
+
+function fmt1(n) {
+  return (Math.round(n * 10) / 10).toLocaleString("da-DK");
+}
+function fmt0(n) {
+  return Math.round(n).toLocaleString("da-DK");
+}
+
+function openPlayerDetail(pid) {
+  const d = computePlayerDetail(pid);
+  if (!d) return;
+
+  const byId = {};
+  state.players.forEach((p) => { byId[p.id] = p.name; });
+
+  const matchRows = d.recentMatches.length
+    ? d.recentMatches
+        .map((m) => {
+          const won = m.winnerId === d.player.id;
+          return (
+            '<div class="match-player-row' + (won ? " is-winner" : "") + '">' +
+            '<span class="mp-name">' + formatDateTime(m.playedAt) + (won ? " 🏆" : "") + "</span>" +
+            "<span>" + m.r.roundWins + " sejre &middot; " + m.r.elim + " elim &middot; " + m.r.dmg + " dmg</span>" +
+            "</div>"
+          );
+        })
+        .join("")
+    : '<span class="setup-empty">Ingen kampe endnu.</span>';
+
+  playerModalContent.innerHTML =
+    '<h2 class="pd-name" id="playerModalName">' + escapeHtml(d.player.name) + "</h2>" +
+    '<p class="pd-sub">' + d.matchesPlayed + " kamp" + (d.matchesPlayed === 1 ? "" : "e") + " spillet &middot; " + d.matchesWon + " vundet &middot; " + d.winRate + "% sejrsrate</p>" +
+    '<div class="pd-stat-grid">' +
+    '<div class="pd-stat"><div class="pd-stat-label">Snit runde-sejre / kamp</div><div class="pd-stat-value gold">' + fmt1(d.avgRoundWins) + "</div></div>" +
+    '<div class="pd-stat"><div class="pd-stat-label">Snit eliminations / kamp</div><div class="pd-stat-value elim">' + fmt1(d.avgElim) + "</div></div>" +
+    '<div class="pd-stat"><div class="pd-stat-label">Snit damage / kamp</div><div class="pd-stat-value dmg">' + fmt0(d.avgDmg) + "</div></div>" +
+    '<div class="pd-stat"><div class="pd-stat-label">Samlede runde-sejre</div><div class="pd-stat-value">' + d.totalRoundWins + "</div></div>" +
+    (d.bestElimMatch
+      ? '<div class="pd-stat"><div class="pd-stat-label">Flest elim i én kamp</div><div class="pd-stat-value elim">' + d.bestElimMatch.r.elim + "</div></div>"
+      : "") +
+    (d.bestDmgMatch
+      ? '<div class="pd-stat"><div class="pd-stat-label">Mest damage i én kamp</div><div class="pd-stat-value dmg">' + d.bestDmgMatch.r.dmg + "</div></div>"
+      : "") +
+    "</div>" +
+    '<p class="pd-section-title">Seneste kampe</p>' +
+    '<div class="pd-matches">' + matchRows + "</div>";
+
+  playerModalOverlay.hidden = false;
+  playerModalClose.focus();
+}
+
+function closePlayerDetail() {
+  playerModalOverlay.hidden = true;
+}
+
+playerModalClose.addEventListener("click", closePlayerDetail);
+playerModalOverlay.addEventListener("click", (e) => {
+  if (e.target === playerModalOverlay) closePlayerDetail();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !playerModalOverlay.hidden) closePlayerDetail();
+});
+
 /* ---------------- Match entry form ---------------- */
 function renderMatchForm() {
   matchFormBody.innerHTML = state.players
     .map(
       (p) =>
         '<tr data-player="' + p.id + '">' +
-        '<td class="name">' + escapeHtml(p.name) + "</td>" +
+        '<td class="name"><label><input type="checkbox" class="f-active" checked> ' + escapeHtml(p.name) + "</label></td>" +
         '<td class="num"><input type="number" min="0" step="1" class="f-wins" placeholder="0"></td>' +
         '<td class="num"><input type="number" min="0" step="1" class="f-elim" placeholder="0"></td>' +
         '<td class="num"><input type="number" min="0" step="1" class="f-dmg" placeholder="0"></td>' +
@@ -306,33 +416,38 @@ function renderMatchForm() {
     .join("");
 }
 
+matchFormBody.addEventListener("change", (e) => {
+  if (!e.target.classList.contains("f-active")) return;
+  const row = e.target.closest("tr");
+  const active = e.target.checked;
+  row.classList.toggle("is-inactive", !active);
+  row.querySelectorAll('input[type="number"]').forEach((input) => { input.disabled = !active; });
+});
+
 matchForm.addEventListener("submit", (e) => {
   e.preventDefault();
-  if (state.players.length < 2) {
-    alert("Tilføj mindst to spillere først.");
+  const rows = Array.from(matchFormBody.querySelectorAll("tr")).filter(
+    (row) => row.querySelector(".f-active").checked
+  );
+
+  if (rows.length < 2) {
+    alert("Afkryds mindst to spillere der var med i kampen.");
     return;
   }
-  const rows = matchFormBody.querySelectorAll("tr");
+
   const results = {};
   let best = null;
-  let anyInput = false;
   rows.forEach((row) => {
     const pid = row.getAttribute("data-player");
     const roundWins = Number(row.querySelector(".f-wins").value) || 0;
     const elim = Number(row.querySelector(".f-elim").value) || 0;
     const dmg = Number(row.querySelector(".f-dmg").value) || 0;
-    if (roundWins || elim || dmg) anyInput = true;
     results[pid] = { roundWins, elim, dmg };
     const entry = { pid, roundWins, elim, dmg };
     if (!best) best = [entry];
     else if (roundWins > best[0].roundWins) best = [entry];
     else if (roundWins === best[0].roundWins) best.push(entry);
   });
-
-  if (!anyInput) {
-    alert("Indtast resultatet for kampen først.");
-    return;
-  }
 
   let winnerId = null;
   if (best && best.length === 1 && best[0].roundWins > 0) {
@@ -410,6 +525,7 @@ undoMatchBtn.addEventListener("click", () => {
 /* ---------------- Reset ---------------- */
 resetBtn.addEventListener("click", () => {
   if (!confirm("Nulstil hele opgøret (spillere og al kamp-historik)?")) return;
+  closePlayerDetail();
   state = { ...DEFAULT_STATE };
   persist();
 });
