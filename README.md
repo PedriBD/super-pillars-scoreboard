@@ -57,7 +57,7 @@ Live scoreboard-tracker til Fortnite-gamemoden Super Pillars. Statisk side (GitH
    returns boolean
    language sql
    security definer
-   set search_path = public
+   set search_path = public, extensions
    as $$
      select exists (
        select 1 from site_gate where id = 1 and password_hash = crypt(pwd, password_hash)
