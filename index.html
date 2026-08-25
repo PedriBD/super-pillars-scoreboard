@@ -67,95 +67,64 @@
       </div>
     </section>
 
-    <!-- SETUP PHASE -->
-    <section class="panel" id="setupPanel" hidden>
-      <p class="panel-title">Spillere</p>
-      <p class="panel-hint">Tilføj alle der er med i opgøret.</p>
-      <form class="player-add-row" id="addPlayerForm">
-        <input type="text" id="newPlayerName" placeholder="Spillernavn, fx Kroght21" maxlength="24" autocomplete="off">
-        <button type="submit" class="btn-ghost">Tilføj</button>
-      </form>
-      <div class="player-chip-list" id="playerChipList">
-        <span class="setup-empty">Ingen spillere endnu.</span>
-      </div>
-
-      <div class="setup-grid">
-        <div>
-          <p class="panel-title" style="margin-top:22px;">Vinderbetingelse</p>
-          <p class="panel-hint">Første spiller til at vinde dette antal runder, vinder hele opgøret.</p>
-        </div>
-        <div class="target-field">
-          <label class="field-label" for="targetWins">Runde-sejre mål</label>
-          <input type="number" id="targetWins" min="1" max="100" value="5">
-        </div>
-      </div>
-
-      <div class="form-actions">
-        <button type="button" class="btn-ghost" id="leaveRoomBtn">Skift spil</button>
-        <button class="btn-primary" id="startGameBtn" disabled>Start spil</button>
-      </div>
-    </section>
-
-    <!-- PLAYING / FINISHED PHASE -->
+    <!-- MAIN APP (shown once a room is joined) -->
     <div id="gamePanels" hidden>
 
-      <div id="winnerBanner" hidden class="panel banner">
-        <svg class="banner-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-          <path d="M7 4h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4Z"/>
-          <path d="M7 5H4a3 3 0 0 0 3 4"/>
-          <path d="M17 5h3a3 3 0 0 1-3 4"/>
-          <path d="M12 12v3"/>
-          <path d="M9 19h6"/>
-          <path d="M10 16h4l.6 3H9.4l.6-3Z"/>
-        </svg>
-        <div class="banner-text">
-          <p class="eyebrow">Opgøret er afgjort</p>
-          <h2 id="winnerName">—</h2>
+      <section class="panel">
+        <p class="panel-title">Spillere</p>
+        <p class="panel-hint">Tilføj alle der er med, når som helst.</p>
+        <form class="player-add-row" id="addPlayerForm">
+          <input type="text" id="newPlayerName" placeholder="Spillernavn, fx Kroght21" maxlength="24" autocomplete="off">
+          <button type="submit" class="btn-ghost">Tilføj</button>
+        </form>
+        <div class="player-chip-list" id="playerChipList">
+          <span class="setup-empty">Ingen spillere endnu.</span>
         </div>
-        <div class="banner-actions">
-          <button class="btn-primary" id="newGameBtn">Nyt spil</button>
-        </div>
-      </div>
+      </section>
 
       <section class="panel">
-        <p class="panel-title">Stilling</p>
-        <p class="panel-hint" id="lbHint"></p>
+        <p class="panel-title">All-time stilling</p>
+        <p class="panel-hint" id="lbHint">Samlet på tværs af alle afsluttede kampe.</p>
         <div class="leaderboard" id="leaderboard"></div>
       </section>
 
-      <section class="panel" id="roundEntryPanel">
-        <p class="panel-title" id="roundEntryTitle">Registrér runde</p>
-        <p class="panel-hint">Score, eliminations og damage dealt for hver spiller.</p>
-        <form id="roundForm">
+      <section class="panel" id="matchEntryPanel">
+        <p class="panel-title">Registrér afsluttet kamp</p>
+        <p class="panel-hint">Når en spiller har nået det aftalte antal runde-sejre, indtast slutresultatet for hele kampen her.</p>
+        <form id="matchForm">
           <table class="round-table">
             <thead>
               <tr>
                 <th>Spiller</th>
+                <th class="num">Sejre</th>
                 <th class="num">Score</th>
                 <th class="num">Eliminations</th>
                 <th class="num">Damage dealt</th>
               </tr>
             </thead>
-            <tbody id="roundFormBody"></tbody>
+            <tbody id="matchFormBody"></tbody>
           </table>
           <div class="form-actions">
-            <button type="button" class="btn-ghost" id="undoRoundBtn" disabled>Fortryd sidste runde</button>
-            <button type="submit" class="btn-primary">Gem runde</button>
+            <span></span>
+            <button type="submit" class="btn-primary">Gem kamp</button>
           </div>
         </form>
       </section>
 
       <section class="panel">
-        <button class="history-toggle" id="historyToggle" type="button" aria-expanded="false">
-          <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 1l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
-          Rundehistorik
-        </button>
+        <div class="history-head">
+          <button class="history-toggle" id="historyToggle" type="button" aria-expanded="false">
+            <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 1l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            Kamp-historik
+          </button>
+          <button type="button" class="btn-ghost" id="undoMatchBtn" disabled>Fortryd sidste kamp</button>
+        </div>
         <div class="history-scroll" id="historyWrap" hidden></div>
       </section>
 
       <div class="form-actions">
         <button class="btn-danger" id="resetBtn">Nulstil helt</button>
-        <button type="button" class="btn-ghost" id="leaveRoomBtn2">Skift spil</button>
+        <button type="button" class="btn-ghost" id="leaveRoomBtn">Skift spil</button>
       </div>
     </div>
 

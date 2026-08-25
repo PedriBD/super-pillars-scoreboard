@@ -1,6 +1,6 @@
 import { supabase } from "./supabase-config.js";
 
-const DEFAULT_STATE = { phase: "setup", players: [], target: 5, rounds: [], winnerId: null };
+const DEFAULT_STATE = { players: [], matches: [] };
 const ROOM_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O or 1/I
 
 let state = { ...DEFAULT_STATE };
@@ -45,6 +45,14 @@ function escapeHtml(str) {
   return d.innerHTML;
 }
 
+function formatDateTime(iso) {
+  try {
+    return new Date(iso).toLocaleString("da-DK", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  } catch (e) {
+    return "";
+  }
+}
+
 /* ---------------- Element refs ---------------- */
 const passwordGate = document.getElementById("passwordGate");
 const passwordForm = document.getElementById("passwordForm");
@@ -60,51 +68,53 @@ const roomPill = document.getElementById("roomPill");
 const roomPillText = document.getElementById("roomPillText");
 const copyLinkBtn = document.getElementById("copyLinkBtn");
 
-const setupPanel = document.getElementById("setupPanel");
-const addPlayerForm = document.getElementById("addPlayerForm");
-const newPlayerName = document.getElementById("newPlayerName");
-const playerChipList = document.getElementById("playerChipList");
-const targetWins = document.getElementById("targetWins");
-const startGameBtn = document.getElementById("startGameBtn");
-const leaveRoomBtn = document.getElementById("leaveRoomBtn");
-const leaveRoomBtn2 = document.getElementById("leaveRoomBtn2");
-
 const gamePanels = document.getElementById("gamePanels");
 const statusPill = document.getElementById("statusPill");
 const statusText = document.getElementById("statusText");
+
+const addPlayerForm = document.getElementById("addPlayerForm");
+const newPlayerName = document.getElementById("newPlayerName");
+const playerChipList = document.getElementById("playerChipList");
+
 const leaderboard = document.getElementById("leaderboard");
-const lbHint = document.getElementById("lbHint");
-const roundFormBody = document.getElementById("roundFormBody");
-const roundForm = document.getElementById("roundForm");
-const roundEntryTitle = document.getElementById("roundEntryTitle");
-const roundEntryPanel = document.getElementById("roundEntryPanel");
-const undoRoundBtn = document.getElementById("undoRoundBtn");
+
+const matchForm = document.getElementById("matchForm");
+const matchFormBody = document.getElementById("matchFormBody");
+
 const historyToggle = document.getElementById("historyToggle");
 const historyWrap = document.getElementById("historyWrap");
-const winnerBanner = document.getElementById("winnerBanner");
-const winnerName = document.getElementById("winnerName");
-const newGameBtn = document.getElementById("newGameBtn");
-const resetBtn = document.getElementById("resetBtn");
+const undoMatchBtn = document.getElementById("undoMatchBtn");
 
-/* ---------------- Standings ---------------- */
+const resetBtn = document.getElementById("resetBtn");
+const leaveRoomBtn = document.getElementById("leaveRoomBtn");
+
+/* ---------------- All-time standings ---------------- */
 function computeStandings() {
   const byId = {};
   state.players.forEach((p) => {
-    byId[p.id] = { id: p.id, name: p.name, roundWins: 0, totalScore: 0, totalElim: 0, totalDmg: 0 };
+    byId[p.id] = {
+      id: p.id, name: p.name,
+      matchesPlayed: 0, matchesWon: 0,
+      totalRoundWins: 0, totalScore: 0, totalElim: 0, totalDmg: 0,
+    };
   });
-  state.rounds.forEach((r) => {
+  state.matches.forEach((m) => {
     state.players.forEach((p) => {
-      const e = r.players[p.id];
-      if (!e) return;
-      byId[p.id].totalScore += Number(e.score) || 0;
-      byId[p.id].totalElim += Number(e.elim) || 0;
-      byId[p.id].totalDmg += Number(e.dmg) || 0;
+      const r = m.results[p.id];
+      if (!r) return;
+      const row = byId[p.id];
+      row.matchesPlayed += 1;
+      row.totalRoundWins += Number(r.roundWins) || 0;
+      row.totalScore += Number(r.score) || 0;
+      row.totalElim += Number(r.elim) || 0;
+      row.totalDmg += Number(r.dmg) || 0;
     });
-    if (r.winnerId && byId[r.winnerId]) byId[r.winnerId].roundWins += 1;
+    if (m.winnerId && byId[m.winnerId]) byId[m.winnerId].matchesWon += 1;
   });
   const list = state.players.map((p) => byId[p.id]);
   list.sort((a, b) => {
-    if (b.roundWins !== a.roundWins) return b.roundWins - a.roundWins;
+    if (b.matchesWon !== a.matchesWon) return b.matchesWon - a.matchesWon;
+    if (b.totalRoundWins !== a.totalRoundWins) return b.totalRoundWins - a.totalRoundWins;
     if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
     return a.name.localeCompare(b.name);
   });
@@ -130,12 +140,20 @@ function subscribeRoom(code) {
       { event: "*", schema: "public", table: "games", filter: `room_code=eq.${code}` },
       (payload) => {
         if (payload.new && payload.new.state) {
-          state = payload.new.state;
+          state = normalizeState(payload.new.state);
           renderAll();
         }
       }
     )
     .subscribe();
+}
+
+function normalizeState(raw) {
+  if (!raw || typeof raw !== "object") return { ...DEFAULT_STATE };
+  return {
+    players: Array.isArray(raw.players) ? raw.players : [],
+    matches: Array.isArray(raw.matches) ? raw.matches : [],
+  };
 }
 
 async function joinRoom(code) {
@@ -157,7 +175,7 @@ async function joinRoom(code) {
   }
 
   if (data && data.state) {
-    state = data.state;
+    state = normalizeState(data.state);
   } else {
     state = { ...DEFAULT_STATE };
     await supabase.from("games").upsert({ room_code: code, state, updated_at: new Date().toISOString() });
@@ -166,6 +184,7 @@ async function joinRoom(code) {
   subscribeRoom(code);
   roomPill.hidden = false;
   roomPillText.textContent = "Spil " + code;
+  gamePanels.hidden = false;
   renderAll();
 }
 
@@ -179,7 +198,6 @@ function leaveRoom() {
   clearRoomInUrl();
   roomPill.hidden = true;
   roomGate.hidden = false;
-  setupPanel.hidden = true;
   gamePanels.hidden = true;
   statusPill.hidden = true;
 }
@@ -208,10 +226,9 @@ copyLinkBtn.addEventListener("click", async () => {
 });
 
 leaveRoomBtn.addEventListener("click", leaveRoom);
-leaveRoomBtn2.addEventListener("click", leaveRoom);
 
-/* ---------------- Setup phase rendering ---------------- */
-function renderSetup() {
+/* ---------------- Players ---------------- */
+function renderPlayers() {
   if (state.players.length === 0) {
     playerChipList.innerHTML = '<span class="setup-empty">Ingen spillere endnu.</span>';
   } else {
@@ -224,8 +241,6 @@ function renderSetup() {
       )
       .join("");
   }
-  startGameBtn.disabled = state.players.length < 2;
-  targetWins.value = state.target;
 }
 
 addPlayerForm.addEventListener("submit", (e) => {
@@ -250,121 +265,90 @@ playerChipList.addEventListener("click", (e) => {
   persist();
 });
 
-targetWins.addEventListener("change", () => {
-  const v = Math.max(1, Math.min(100, Number(targetWins.value) || 5));
-  state.target = v;
-  targetWins.value = v;
-  persist();
-});
-
-startGameBtn.addEventListener("click", () => {
-  if (state.players.length < 2) return;
-  state.target = Math.max(1, Math.min(100, Number(targetWins.value) || 5));
-  state.phase = "playing";
-  persist();
-});
-
 /* ---------------- Leaderboard rendering ---------------- */
 function renderLeaderboard() {
   const standings = computeStandings();
-  lbHint.textContent = "Først til " + state.target + " runde-sejre vinder.";
-  leaderboard.innerHTML = standings
-    .map((s, i) => {
-      const isWinner = state.winnerId === s.id;
-      const isLeader = !isWinner && i === 0 && s.roundWins > 0;
-      let pips = "";
-      for (let k = 0; k < state.target; k++) {
-        pips += '<span class="pip' + (k < s.roundWins ? " filled" : "") + '"></span>';
-      }
-      return (
-        '<div class="lb-row' + (isWinner ? " is-winner" : isLeader ? " is-leader" : "") + '">' +
-        '<div class="lb-rank">' + (i + 1) + "</div>" +
-        '<div class="lb-main">' +
-        '<div class="lb-name">' + escapeHtml(s.name) + (isWinner ? " 🏆" : "") + "</div>" +
-        '<div class="lb-stats">' +
-        "<span>Score <b>" + s.totalScore + "</b></span>" +
-        '<span class="elim">Elim ' + s.totalElim + "</span>" +
-        '<span class="dmg">Dmg ' + s.totalDmg + "</span>" +
-        "</div>" +
-        "</div>" +
-        '<div class="lb-pips">' +
-        '<div class="pip-row">' + pips + "</div>" +
-        '<div class="lb-score">' + s.roundWins + "/" + state.target + "<small>sejre</small></div>" +
-        "</div>" +
-        "</div>"
-      );
-    })
-    .join("");
+  leaderboard.innerHTML = standings.length
+    ? standings
+        .map((s, i) => {
+          const isLeader = i === 0 && s.matchesWon > 0;
+          return (
+            '<div class="lb-row' + (isLeader ? " is-leader" : "") + '">' +
+            '<div class="lb-rank">' + (i + 1) + "</div>" +
+            '<div class="lb-main">' +
+            '<div class="lb-name">' + escapeHtml(s.name) + (isLeader ? " 🏆" : "") + "</div>" +
+            '<div class="lb-stats">' +
+            "<span>Kampe <b>" + s.matchesPlayed + "</b></span>" +
+            "<span>Runde-sejre " + s.totalRoundWins + "</span>" +
+            "<span>Score " + s.totalScore + "</span>" +
+            '<span class="elim">Elim ' + s.totalElim + "</span>" +
+            '<span class="dmg">Dmg ' + s.totalDmg + "</span>" +
+            "</div>" +
+            "</div>" +
+            '<div class="lb-score">' + s.matchesWon + '<small>kampe vundet</small></div>' +
+            "</div>"
+          );
+        })
+        .join("")
+    : '<span class="setup-empty">Tilføj spillere og registrér en kamp for at se stillingen.</span>';
 }
 
-/* ---------------- Round entry form ---------------- */
-function renderRoundForm() {
-  const nextRound = state.rounds.length + 1;
-  roundEntryTitle.textContent = "Registrér runde " + nextRound;
-  roundFormBody.innerHTML = state.players
+/* ---------------- Match entry form ---------------- */
+function renderMatchForm() {
+  matchFormBody.innerHTML = state.players
     .map(
       (p) =>
         '<tr data-player="' + p.id + '">' +
         '<td class="name">' + escapeHtml(p.name) + "</td>" +
-        '<td class="num"><input type="number" min="0" step="1" class="f-score" placeholder="0" required></td>' +
+        '<td class="num"><input type="number" min="0" step="1" class="f-wins" placeholder="0"></td>' +
+        '<td class="num"><input type="number" min="0" step="1" class="f-score" placeholder="0"></td>' +
         '<td class="num"><input type="number" min="0" step="1" class="f-elim" placeholder="0"></td>' +
         '<td class="num"><input type="number" min="0" step="1" class="f-dmg" placeholder="0"></td>' +
         "</tr>"
     )
     .join("");
-  undoRoundBtn.disabled = state.rounds.length === 0;
 }
 
-roundForm.addEventListener("submit", (e) => {
+matchForm.addEventListener("submit", (e) => {
   e.preventDefault();
-  const rows = roundFormBody.querySelectorAll("tr");
-  const roundPlayers = {};
+  if (state.players.length < 2) {
+    alert("Tilføj mindst to spillere først.");
+    return;
+  }
+  const rows = matchFormBody.querySelectorAll("tr");
+  const results = {};
   let best = null;
+  let anyInput = false;
   rows.forEach((row) => {
     const pid = row.getAttribute("data-player");
+    const roundWins = Number(row.querySelector(".f-wins").value) || 0;
     const score = Number(row.querySelector(".f-score").value) || 0;
     const elim = Number(row.querySelector(".f-elim").value) || 0;
     const dmg = Number(row.querySelector(".f-dmg").value) || 0;
-    roundPlayers[pid] = { score, elim, dmg };
-    const entry = { pid, score, elim, dmg };
+    if (roundWins || score || elim || dmg) anyInput = true;
+    results[pid] = { roundWins, score, elim, dmg };
+    const entry = { pid, roundWins, score, elim, dmg };
     if (!best) best = [entry];
-    else if (score > best[0].score) best = [entry];
-    else if (score === best[0].score) best.push(entry);
+    else if (roundWins > best[0].roundWins) best = [entry];
+    else if (roundWins === best[0].roundWins) best.push(entry);
   });
 
+  if (!anyInput) {
+    alert("Indtast resultatet for kampen først.");
+    return;
+  }
+
   let winnerId = null;
-  if (best && best.length === 1) {
+  if (best && best.length === 1 && best[0].roundWins > 0) {
     winnerId = best[0].pid;
-  } else if (best && best.length > 1) {
-    const byElim = best.slice().sort((a, b) => b.elim - a.elim);
-    if (byElim[0].elim > byElim[1].elim) {
-      winnerId = byElim[0].pid;
-    } else {
-      const tiedElim = byElim.filter((e) => e.elim === byElim[0].elim);
-      const byDmg = tiedElim.slice().sort((a, b) => b.dmg - a.dmg);
-      if (byDmg.length === 1 || byDmg[0].dmg > byDmg[1].dmg) winnerId = byDmg[0].pid;
-    }
+  } else if (best && best.length > 1 && best[0].roundWins > 0) {
+    const byScore = best.slice().sort((a, b) => b.score - a.score);
+    if (byScore[0].score > byScore[1].score) winnerId = byScore[0].pid;
   }
 
-  state.rounds.push({ players: roundPlayers, winnerId });
-
-  const standings = computeStandings();
-  if (standings.length && standings[0].roundWins >= state.target) {
-    state.phase = "finished";
-    state.winnerId = standings[0].id;
-  }
-
+  state.matches.push({ id: uid(), playedAt: new Date().toISOString(), results, winnerId });
   persist();
-});
-
-undoRoundBtn.addEventListener("click", () => {
-  if (!state.rounds.length) return;
-  state.rounds.pop();
-  if (state.phase === "finished") {
-    state.phase = "playing";
-    state.winnerId = null;
-  }
-  persist();
+  matchForm.reset();
 });
 
 /* ---------------- History ---------------- */
@@ -377,56 +361,54 @@ historyToggle.addEventListener("click", () => {
 });
 
 function renderHistory() {
-  if (!state.rounds.length) {
-    historyWrap.innerHTML = '<p class="setup-empty">Ingen runder registreret endnu.</p>';
+  if (!state.matches.length) {
+    historyWrap.innerHTML = '<p class="setup-empty">Ingen kampe registreret endnu.</p>';
     return;
   }
   const byId = {};
   state.players.forEach((p) => { byId[p.id] = p.name; });
-  const header =
-    "<tr><th>Runde</th>" +
-    state.players.map((p) => "<th>" + escapeHtml(p.name) + "</th>").join("") +
-    "<th>Vinder</th></tr>";
 
-  const rows = state.rounds
-    .map((r, i) => {
-      const cells = state.players
-        .map((p) => {
-          const e = r.players[p.id];
-          return e ? '<td class="mono">' + e.score + "</td>" : '<td class="mono">–</td>';
-        })
+  const cards = state.matches
+    .slice()
+    .reverse()
+    .map((m) => {
+      const playerRows = Object.keys(m.results)
+        .map((pid) => ({ pid, name: byId[pid] || "?", ...m.results[pid] }))
+        .filter((r) => byId[r.pid])
+        .sort((a, b) => b.roundWins - a.roundWins)
+        .map(
+          (r) =>
+            '<div class="match-player-row' + (r.pid === m.winnerId ? " is-winner" : "") + '">' +
+            '<span class="mp-name">' + escapeHtml(r.name) + (r.pid === m.winnerId ? " 🏆" : "") + "</span>" +
+            "<span>" + r.roundWins + " sejre &middot; " + r.score + " score</span>" +
+            "</div>"
+        )
         .join("");
-      const winnerNameStr = r.winnerId && byId[r.winnerId] ? byId[r.winnerId] : "Uafgjort";
-      return '<tr><td class="rnum">#' + (i + 1) + "</td>" + cells + '<td class="win-cell">' + escapeHtml(winnerNameStr) + "</td></tr>";
+      return (
+        '<div class="match-card">' +
+        '<div class="match-card-head"><span>' + formatDateTime(m.playedAt) + "</span>" +
+        (m.winnerId && byId[m.winnerId] ? "<b>" + escapeHtml(byId[m.winnerId]) + " vandt</b>" : "<span>Uafgjort</span>") +
+        "</div>" +
+        '<div class="match-players">' + playerRows + "</div>" +
+        "</div>"
+      );
     })
     .join("");
 
-  historyWrap.innerHTML = '<table class="history-table"><thead>' + header + "</thead><tbody>" + rows + "</tbody></table>";
+  historyWrap.innerHTML = '<div class="match-list">' + cards + "</div>";
 }
 
-/* ---------------- Winner banner ---------------- */
-function renderBanner() {
-  if (state.phase === "finished" && state.winnerId) {
-    const p = state.players.find((pl) => pl.id === state.winnerId);
-    winnerName.textContent = (p ? p.name : "Spiller") + " vinder!";
-    winnerBanner.hidden = false;
-    roundEntryPanel.hidden = true;
-  } else {
-    winnerBanner.hidden = true;
-    roundEntryPanel.hidden = false;
-  }
-}
-
-newGameBtn.addEventListener("click", () => {
-  state.phase = "playing";
-  state.rounds = [];
-  state.winnerId = null;
+undoMatchBtn.addEventListener("click", () => {
+  if (!state.matches.length) return;
+  if (!confirm("Fortryd den senest registrerede kamp?")) return;
+  state.matches.pop();
   persist();
 });
 
+/* ---------------- Reset ---------------- */
 resetBtn.addEventListener("click", () => {
-  if (!confirm("Nulstil hele opgøret og fjern alle spillere?")) return;
-  state = { phase: "setup", players: [], target: 5, rounds: [], winnerId: null };
+  if (!confirm("Nulstil hele opgøret (spillere og al kamp-historik)?")) return;
+  state = { ...DEFAULT_STATE };
   persist();
 });
 
@@ -434,26 +416,18 @@ resetBtn.addEventListener("click", () => {
 function renderAll() {
   if (!currentRoom) return;
 
-  if (state.phase === "setup") {
-    setupPanel.hidden = false;
-    gamePanels.hidden = true;
-    statusPill.hidden = true;
-    renderSetup();
-  } else {
-    setupPanel.hidden = true;
-    gamePanels.hidden = false;
-    statusPill.hidden = false;
-    const standings = computeStandings();
-    const leaderText = standings.length ? standings[0].name + " fører" : "";
-    statusText.innerHTML =
-      "<b>Runde " + (state.rounds.length + (state.phase === "playing" ? 1 : 0)) + "</b> &nbsp;&middot;&nbsp; Mål: " +
-      state.target + " sejre" +
-      (leaderText && state.phase === "playing" ? " &nbsp;&middot;&nbsp; " + escapeHtml(leaderText) : "");
-    renderLeaderboard();
-    renderRoundForm();
-    renderBanner();
-    if (historyOpen) renderHistory();
-  }
+  renderPlayers();
+  renderLeaderboard();
+  renderMatchForm();
+  if (historyOpen) renderHistory();
+  undoMatchBtn.disabled = state.matches.length === 0;
+
+  statusPill.hidden = false;
+  const standings = computeStandings();
+  const leaderText = standings.length && standings[0].matchesWon > 0 ? standings[0].name + " fører" : "";
+  statusText.innerHTML =
+    "<b>" + state.matches.length + "</b> kamp" + (state.matches.length === 1 ? "" : "e") + " registreret" +
+    (leaderText ? " &nbsp;&middot;&nbsp; " + escapeHtml(leaderText) : "");
 }
 
 /* ---------------- Password gate ---------------- */
