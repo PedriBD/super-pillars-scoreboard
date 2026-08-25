@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Super Pillars Scoreboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><text y=%2220%22 font-size=%2220%22>🏆</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+
+    <header class="masthead">
+      <div>
+        <p class="masthead-title">Super Pillars</p>
+        <p class="masthead-sub">Scoreboard</p>
+      </div>
+      <div class="masthead-status">
+        <div class="status-pill" id="roomPill" hidden>
+          <span class="status-dot"></span>
+          <span id="roomPillText"></span>
+          <button type="button" class="btn-icon" id="copyLinkBtn" title="Kopiér spillink" aria-label="Kopiér spillink">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="status-pill" id="statusPill" hidden>
+          <span class="status-dot"></span>
+          <span id="statusText"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ROOM GATE -->
+    <section class="panel" id="roomGate">
+      <p class="panel-title">Start eller find et spil</p>
+      <p class="panel-hint">Opret et nyt opgør og send linket til vennerne, eller indtast en spil-kode du har fået.</p>
+      <div class="gate-grid">
+        <div class="gate-card">
+          <p class="gate-card-title">Nyt spil</p>
+          <p class="gate-card-hint">Genererer en kode og et link I kan dele.</p>
+          <button class="btn-primary" id="createRoomBtn" type="button">Opret nyt spil</button>
+        </div>
+        <div class="gate-card">
+          <p class="gate-card-title">Deltag i spil</p>
+          <p class="gate-card-hint">Indtast koden I har aftalt.</p>
+          <form id="joinRoomForm" class="join-row">
+            <input type="text" id="joinRoomCode" placeholder="fx K7QX" maxlength="8" autocomplete="off">
+            <button type="submit" class="btn-ghost">Deltag</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETUP PHASE -->
+    <section class="panel" id="setupPanel" hidden>
+      <p class="panel-title">Spillere</p>
+      <p class="panel-hint">Tilføj alle der er med i opgøret.</p>
+      <form class="player-add-row" id="addPlayerForm">
+        <input type="text" id="newPlayerName" placeholder="Spillernavn, fx Kroght21" maxlength="24" autocomplete="off">
+        <button type="submit" class="btn-ghost">Tilføj</button>
+      </form>
+      <div class="player-chip-list" id="playerChipList">
+        <span class="setup-empty">Ingen spillere endnu.</span>
+      </div>
+
+      <div class="setup-grid">
+        <div>
+          <p class="panel-title" style="margin-top:22px;">Vinderbetingelse</p>
+          <p class="panel-hint">Første spiller til at vinde dette antal runder, vinder hele opgøret.</p>
+        </div>
+        <div class="target-field">
+          <label class="field-label" for="targetWins">Runde-sejre mål</label>
+          <input type="number" id="targetWins" min="1" max="100" value="5">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-ghost" id="leaveRoomBtn">Skift spil</button>
+        <button class="btn-primary" id="startGameBtn" disabled>Start spil</button>
+      </div>
+    </section>
+
+    <!-- PLAYING / FINISHED PHASE -->
+    <div id="gamePanels" hidden>
+
+      <div id="winnerBanner" hidden class="panel banner">
+        <svg class="banner-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M7 4h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4Z"/>
+          <path d="M7 5H4a3 3 0 0 0 3 4"/>
+          <path d="M17 5h3a3 3 0 0 1-3 4"/>
+          <path d="M12 12v3"/>
+          <path d="M9 19h6"/>
+          <path d="M10 16h4l.6 3H9.4l.6-3Z"/>
+        </svg>
+        <div class="banner-text">
+          <p class="eyebrow">Opgøret er afgjort</p>
+          <h2 id="winnerName">—</h2>
+        </div>
+        <div class="banner-actions">
+          <button class="btn-primary" id="newGameBtn">Nyt spil</button>
+        </div>
+      </div>
+
+      <section class="panel">
+        <p class="panel-title">Stilling</p>
+        <p class="panel-hint" id="lbHint"></p>
+        <div class="leaderboard" id="leaderboard"></div>
+      </section>
+
+      <section class="panel" id="roundEntryPanel">
+        <p class="panel-title" id="roundEntryTitle">Registrér runde</p>
+        <p class="panel-hint">Score, eliminations og damage dealt for hver spiller.</p>
+        <form id="roundForm">
+          <table class="round-table">
+            <thead>
+              <tr>
+                <th>Spiller</th>
+                <th class="num">Score</th>
+                <th class="num">Eliminations</th>
+                <th class="num">Damage dealt</th>
+              </tr>
+            </thead>
+            <tbody id="roundFormBody"></tbody>
+          </table>
+          <div class="form-actions">
+            <button type="button" class="btn-ghost" id="undoRoundBtn" disabled>Fortryd sidste runde</button>
+            <button type="submit" class="btn-primary">Gem runde</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <button class="history-toggle" id="historyToggle" type="button" aria-expanded="false">
+          <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 1l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          Rundehistorik
+        </button>
+        <div class="history-scroll" id="historyWrap" hidden></div>
+      </section>
+
+      <div class="form-actions">
+        <button class="btn-danger" id="resetBtn">Nulstil helt</button>
+        <button type="button" class="btn-ghost" id="leaveRoomBtn2">Skift spil</button>
+      </div>
+    </div>
+
+    <p class="footer-note" id="footerNote">Synkroniseres live på tværs af enheder via samme spil-kode.</p>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
