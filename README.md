@@ -4,6 +4,7 @@ Live scoreboard-tracker til Fortnite-gamemoden Super Pillars. Statisk side (GitH
 
 ## Sådan virker det
 
+- Hele siden er låst bag en fælles adgangskode (`DanskeMestre2026`). Adgangskoden tjekkes serverside i Supabase og huskes i browseren, så man kun skal indtaste den én gang pr. enhed.
 - Man opretter et nyt spil, hvilket genererer en kort spil-kode (fx `K7QX`) og opdaterer URL'en til `?room=K7QX`.
 - Alle der åbner det link, eller indtaster koden manuelt, deler samme spil.
 - Man aftaler hvor mange runde-sejre der skal til for at vinde. Hver runde registreres score, eliminations og damage dealt pr. spiller — den med højest score vinder runden (ved lighed afgør eliminations, dernæst damage).
@@ -32,11 +33,50 @@ Live scoreboard-tracker til Fortnite-gamemoden Super Pillars. Statisk side (GitH
 
    Dette gør tabellen offentligt læs-/skrivbar (uden login), afgrænset i praksis af at spil-koden er tilfældig og ikke deles offentligt. Fint til en scoreboard-app blandt venner — ikke egnet hvis I vil beskytte mod alle der gætter koden.
 
-3. Under **Project Settings → API** finder du:
+3. Kør derefter dette for adgangskode-beskyttelsen af selve siden (kør det i samme SQL Editor):
+
+   ```sql
+   create extension if not exists pgcrypto;
+
+   create table if not exists site_gate (
+     id int primary key default 1,
+     password_hash text not null,
+     check (id = 1)
+   );
+
+   insert into site_gate (id, password_hash)
+   values (1, crypt('DanskeMestre2026', gen_salt('bf')))
+   on conflict (id) do update set password_hash = excluded.password_hash;
+
+   alter table site_gate enable row level security;
+   -- Ingen policies tilføjes med vilje: tabellen er dermed helt utilgængelig
+   -- direkte for klienter, selv med RLS slået til. Kun funktionen herunder
+   -- (som kører med forhøjede rettigheder) kan læse den.
+
+   create or replace function check_site_password(pwd text)
+   returns boolean
+   language sql
+   security definer
+   set search_path = public
+   as $$
+     select exists (
+       select 1 from site_gate where id = 1 and password_hash = crypt(pwd, password_hash)
+     );
+   $$;
+
+   revoke all on function check_site_password(text) from public;
+   grant execute on function check_site_password(text) to anon, authenticated;
+   ```
+
+   Adgangskoden gemmes kun som et bcrypt-hash i databasen og bliver aldrig sendt til browseren — siden sender det indtastede ord til en Postgres-funktion, som svarer sandt/falsk. Vil du skifte adgangskode senere, kør blot `insert ... on conflict` linjen igen med en ny værdi.
+
+   Hvis `pgcrypto` fejler med en rettighedsfejl, så slå den til under **Database → Extensions** i Supabase-dashboardet i stedet, og kør resten af blokken igen.
+
+4. Under **Project Settings → API** finder du:
    - **Project URL**
    - **anon public key**
 
-4. Åbn [`supabase-config.js`](supabase-config.js) og indsæt dem:
+5. Åbn [`supabase-config.js`](supabase-config.js) og indsæt dem:
 
    ```js
    const SUPABASE_URL = "https://xxxxxxxx.supabase.co";

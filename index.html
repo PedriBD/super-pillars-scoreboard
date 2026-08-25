@@ -33,6 +33,19 @@
       </div>
     </header>
 
+    <!-- PASSWORD GATE -->
+    <section class="panel" id="passwordGate">
+      <p class="panel-title">Adgangskode</p>
+      <p class="panel-hint">Indtast adgangskoden for at få adgang til scoreboardet.</p>
+      <form id="passwordForm" class="join-row">
+        <input type="password" id="passwordInput" placeholder="Adgangskode" autocomplete="current-password">
+        <button type="submit" class="btn-primary">Lås op</button>
+      </form>
+      <p class="gate-error" id="passwordError" hidden>Forkert adgangskode.</p>
+    </section>
+
+    <div id="appRoot" hidden>
+
     <!-- ROOM GATE -->
     <section class="panel" id="roomGate">
       <p class="panel-title">Start eller find et spil</p>
@@ -147,6 +160,7 @@
     </div>
 
     <p class="footer-note" id="footerNote">Synkroniseres live på tværs af enheder via samme spil-kode.</p>
+    </div>
   </div>
 
   <script type="module" src="app.js"></script>

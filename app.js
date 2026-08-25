@@ -46,6 +46,12 @@ function escapeHtml(str) {
 }
 
 /* ---------------- Element refs ---------------- */
+const passwordGate = document.getElementById("passwordGate");
+const passwordForm = document.getElementById("passwordForm");
+const passwordInput = document.getElementById("passwordInput");
+const passwordError = document.getElementById("passwordError");
+const appRootEl = document.getElementById("appRoot");
+
 const roomGate = document.getElementById("roomGate");
 const createRoomBtn = document.getElementById("createRoomBtn");
 const joinRoomForm = document.getElementById("joinRoomForm");
@@ -450,10 +456,60 @@ function renderAll() {
   }
 }
 
+/* ---------------- Password gate ---------------- */
+const PASSWORD_UNLOCK_KEY = "spg_unlocked_v1";
+
+function unlockApp() {
+  passwordGate.hidden = true;
+  appRootEl.hidden = false;
+  startApp();
+}
+
+function startApp() {
+  const initialRoom = getRoomFromUrl();
+  if (initialRoom) {
+    joinRoom(initialRoom);
+  } else {
+    roomGate.hidden = false;
+  }
+}
+
+passwordForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pwd = passwordInput.value;
+  if (!pwd) return;
+  passwordError.hidden = true;
+  const submitBtn = passwordForm.querySelector("button");
+  submitBtn.disabled = true;
+
+  const { data, error } = await supabase.rpc("check_site_password", { pwd });
+
+  submitBtn.disabled = false;
+
+  if (error) {
+    console.warn("Adgangstjek fejlede:", error);
+    passwordError.textContent = "Noget gik galt — prøv igen om lidt.";
+    passwordError.hidden = false;
+    return;
+  }
+
+  if (data === true) {
+    try { localStorage.setItem(PASSWORD_UNLOCK_KEY, "1"); } catch (e) {}
+    passwordInput.value = "";
+    unlockApp();
+  } else {
+    passwordError.textContent = "Forkert adgangskode.";
+    passwordError.hidden = false;
+    passwordInput.select();
+  }
+});
+
 /* ---------------- Boot ---------------- */
-const initialRoom = getRoomFromUrl();
-if (initialRoom) {
-  joinRoom(initialRoom);
+let alreadyUnlocked = false;
+try { alreadyUnlocked = localStorage.getItem(PASSWORD_UNLOCK_KEY) === "1"; } catch (e) {}
+
+if (alreadyUnlocked) {
+  unlockApp();
 } else {
-  roomGate.hidden = false;
+  passwordInput.focus();
 }
