@@ -19,6 +19,7 @@
         <p class="masthead-sub" id="mastheadSub">Scoreboard</p>
       </div>
       <div class="masthead-status">
+        <button type="button" class="btn-ghost" id="statsToggleBtn" hidden>Statistik</button>
         <button type="button" class="btn-ghost" id="backToListBtn" hidden>&larr; Opgør</button>
         <div class="status-pill" id="statusPill" hidden>
           <span class="status-dot"></span>
@@ -108,6 +109,28 @@
       <div class="form-actions">
         <button class="btn-danger" id="resetBtn">Slet dette opgør</button>
         <button type="button" class="btn-ghost" id="leaveRoomBtn">&larr; Tilbage til opgør</button>
+      </div>
+    </div>
+
+    <!-- STATS VIEW -->
+    <div id="statsPanels" hidden>
+
+      <section class="panel">
+        <p class="panel-title">Statistik &amp; ranglister</p>
+        <p class="panel-hint">Baseret på alle registrerede kampe i dette opgør.</p>
+      </section>
+
+      <div class="stat-board-grid" id="statBoardGrid"></div>
+
+      <section class="panel">
+        <p class="panel-title">Rekorder</p>
+        <p class="panel-hint">De bedste enkeltstående kampe nogensinde i dette opgør.</p>
+        <div class="record-grid" id="recordGrid"></div>
+      </section>
+
+      <div class="form-actions">
+        <span></span>
+        <button type="button" class="btn-ghost" id="statsBackBtn">&larr; Tilbage til scoreboard</button>
       </div>
     </div>
 

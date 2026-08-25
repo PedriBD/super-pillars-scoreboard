@@ -7,6 +7,7 @@ let state = { ...DEFAULT_STATE };
 let currentRoom = null;
 let channel = null;
 let historyOpen = false;
+let currentView = "scoreboard";
 
 /* ---------------- Room helpers ---------------- */
 function getRoomFromUrl() {
@@ -92,6 +93,12 @@ const playerModal = document.getElementById("playerModal");
 const playerModalContent = document.getElementById("playerModalContent");
 const playerModalClose = document.getElementById("playerModalClose");
 
+const statsToggleBtn = document.getElementById("statsToggleBtn");
+const statsPanels = document.getElementById("statsPanels");
+const statsBackBtn = document.getElementById("statsBackBtn");
+const statBoardGrid = document.getElementById("statBoardGrid");
+const recordGrid = document.getElementById("recordGrid");
+
 /* ---------------- All-time standings ---------------- */
 function computeStandings() {
   const byId = {};
@@ -122,6 +129,56 @@ function computeStandings() {
     return a.name.localeCompare(b.name);
   });
   return list;
+}
+
+/* ---------------- Stat leaderboards ---------------- */
+function computeStatBoards() {
+  const base = computeStandings().map((s) => ({
+    ...s,
+    winRate: s.matchesPlayed ? (s.matchesWon / s.matchesPlayed) * 100 : 0,
+    avgElim: s.matchesPlayed ? s.totalElim / s.matchesPlayed : 0,
+    avgDmg: s.matchesPlayed ? s.totalDmg / s.matchesPlayed : 0,
+  }));
+
+  function topBy(key, opts) {
+    opts = opts || {};
+    const minMatches = opts.minMatches || 0;
+    return base
+      .filter((p) => p.matchesPlayed >= minMatches)
+      .slice()
+      .sort((a, b) => b[key] - a[key] || a.name.localeCompare(b.name))
+      .filter((p) => p[key] > 0 || opts.allowZero)
+      .slice(0, 5);
+  }
+
+  return [
+    { title: "Flest kampe vundet", unit: "kampe vundet", rows: topBy("matchesWon"), key: "matchesWon", cls: "gold" },
+    { title: "Højeste sejrsrate", unit: "% sejre (min. 2 kampe)", rows: topBy("winRate", { minMatches: 2 }), key: "winRate", cls: "gold", suffix: "%", round: true },
+    { title: "Flest runde-sejre i alt", unit: "runde-sejre", rows: topBy("totalRoundWins"), key: "totalRoundWins", cls: "accent" },
+    { title: "Flest eliminations i alt", unit: "eliminations", rows: topBy("totalElim"), key: "totalElim", cls: "elim" },
+    { title: "Mest damage i alt", unit: "damage dealt", rows: topBy("totalDmg"), key: "totalDmg", cls: "dmg" },
+    { title: "Bedste snit eliminations", unit: "elim / kamp i snit", rows: topBy("avgElim"), key: "avgElim", cls: "elim", round1: true },
+    { title: "Bedste snit damage", unit: "damage / kamp i snit", rows: topBy("avgDmg"), key: "avgDmg", cls: "dmg", round: true },
+    { title: "Flest kampe spillet", unit: "kampe spillet", rows: topBy("matchesPlayed", { allowZero: true }), key: "matchesPlayed", cls: "" },
+  ];
+}
+
+function computeRecords() {
+  const byId = {};
+  state.players.forEach((p) => { byId[p.id] = p.name; });
+
+  let bestElim = null, bestDmg = null, bestWins = null;
+  state.matches.forEach((m) => {
+    Object.keys(m.results).forEach((pid) => {
+      if (!byId[pid]) return;
+      const r = m.results[pid];
+      if (!bestElim || r.elim > bestElim.value) bestElim = { value: r.elim, name: byId[pid], date: m.playedAt };
+      if (!bestDmg || r.dmg > bestDmg.value) bestDmg = { value: r.dmg, name: byId[pid], date: m.playedAt };
+      if (!bestWins || r.roundWins > bestWins.value) bestWins = { value: r.roundWins, name: byId[pid], date: m.playedAt };
+    });
+  });
+
+  return { bestElim, bestDmg, bestWins };
 }
 
 /* ---------------- Sync ---------------- */
@@ -247,7 +304,11 @@ async function joinRoom(code) {
   mastheadSub.textContent = data.name && data.name.trim() ? data.name : "Unavngivet opgør";
 
   subscribeRoom(code);
+  currentView = "scoreboard";
   gamePanels.hidden = false;
+  statsPanels.hidden = true;
+  statsToggleBtn.hidden = false;
+  statsToggleBtn.textContent = "Statistik";
   renderAll();
 }
 
@@ -262,11 +323,32 @@ function backToSessions() {
   clearRoomInUrl();
   mastheadSub.textContent = "Scoreboard";
   backToListBtn.hidden = true;
+  statsToggleBtn.hidden = true;
+  currentView = "scoreboard";
   gamePanels.hidden = true;
+  statsPanels.hidden = true;
   statusPill.hidden = true;
   sessionListPanel.hidden = false;
   loadSessionList();
 }
+
+function toggleStatsView() {
+  if (currentView === "scoreboard") {
+    currentView = "stats";
+    gamePanels.hidden = true;
+    statsPanels.hidden = false;
+    statsToggleBtn.textContent = "← Scoreboard";
+    renderStats();
+  } else {
+    currentView = "scoreboard";
+    gamePanels.hidden = false;
+    statsPanels.hidden = true;
+    statsToggleBtn.textContent = "Statistik";
+  }
+}
+
+statsToggleBtn.addEventListener("click", toggleStatsView);
+statsBackBtn.addEventListener("click", toggleStatsView);
 
 backToListBtn.addEventListener("click", backToSessions);
 leaveRoomBtn.addEventListener("click", backToSessions);
@@ -577,6 +659,60 @@ resetBtn.addEventListener("click", async () => {
   backToSessions();
 });
 
+/* ---------------- Stats view rendering ---------------- */
+function formatStatValue(board, value) {
+  if (board.round) return Math.round(value).toLocaleString("da-DK");
+  if (board.round1) return (Math.round(value * 10) / 10).toLocaleString("da-DK");
+  return value.toLocaleString("da-DK");
+}
+
+function renderStats() {
+  const boards = computeStatBoards();
+
+  statBoardGrid.innerHTML = boards
+    .map((board) => {
+      const rowsHtml = board.rows.length
+        ? board.rows
+            .map(
+              (p, i) =>
+                '<div class="stat-board-row">' +
+                '<span class="sbr-rank">' + (i + 1) + "</span>" +
+                '<span class="sbr-name">' + escapeHtml(p.name) + "</span>" +
+                '<span class="sbr-value' + (board.cls ? " " + board.cls : "") + '">' +
+                formatStatValue(board, p[board.key]) + (board.suffix || "") +
+                "</span></div>"
+            )
+            .join("")
+        : '<span class="stat-board-empty">Ingen data endnu.</span>';
+      return (
+        '<div class="stat-board">' +
+        '<p class="stat-board-title">' + escapeHtml(board.title) + "</p>" +
+        '<p class="stat-board-unit">' + escapeHtml(board.unit) + "</p>" +
+        '<div class="stat-board-list">' + rowsHtml + "</div>" +
+        "</div>"
+      );
+    })
+    .join("");
+
+  const records = computeRecords();
+  const recordCards = [
+    { label: "Flest eliminations i én kamp", data: records.bestElim, cls: "elim" },
+    { label: "Mest damage i én kamp", data: records.bestDmg, cls: "dmg" },
+    { label: "Flest runde-sejre i én kamp", data: records.bestWins, cls: "gold" },
+  ];
+  recordGrid.innerHTML = recordCards
+    .map((r) =>
+      r.data
+        ? '<div class="record-card">' +
+          '<p class="record-label">' + r.label + "</p>" +
+          '<p class="record-value ' + r.cls + '">' + r.data.value.toLocaleString("da-DK") + "</p>" +
+          '<p class="record-meta">' + escapeHtml(r.data.name) + " &middot; " + formatDateTime(r.data.date) + "</p>" +
+          "</div>"
+        : '<div class="record-card"><p class="record-label">' + r.label + '</p><p class="stat-board-empty">Ingen data endnu.</p></div>'
+    )
+    .join("");
+}
+
 /* ---------------- Top-level render ---------------- */
 function renderAll() {
   if (!currentRoom) return;
@@ -585,6 +721,7 @@ function renderAll() {
   renderLeaderboard();
   renderMatchForm();
   if (historyOpen) renderHistory();
+  if (currentView === "stats") renderStats();
   undoMatchBtn.disabled = state.matches.length === 0;
 
   statusPill.hidden = false;
