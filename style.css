@@ -1,31 +1,44 @@
 :root {
-  --bg: #060b14;
-  --surface: #0d1826;
-  --surface-2: #122036;
-  --surface-3: #17273f;
-  --border: #1e3654;
-  --border-soft: #142743;
+  /* Fortnite-lobby: dyb blå himmel med lilla storm */
+  --bg: #0a1240;
+  --surface: rgba(12, 22, 74, 0.86);
+  --surface-2: #142a8a;
+  --surface-3: #1b37a8;
+  --border: #3a5be0;
+  --border-soft: #26409e;
 
-  --accent: #35d8ff;
-  --accent-dim: #1b8fb3;
-  --accent-soft: rgba(53, 216, 255, 0.12);
+  --accent: #4fd6ff;
+  --accent-dim: #2a8fe0;
+  --accent-soft: rgba(79, 214, 255, 0.16);
 
-  --elim: #ff8a65;
-  --dmg: #a78bfa;
-  --gold: #ffcb4d;
-  --gold-soft: rgba(255, 203, 77, 0.14);
-  --silver: #cbd7ea;
-  --bronze: #e0975f;
-  --danger: #ff5c5c;
-  --danger-soft: rgba(255, 92, 92, 0.12);
+  /* Gul "Play"-knap */
+  --yellow: #ffe43a;
+  --yellow-dark: #e0a800;
 
-  --text: #f2f7ff;
-  --text-dim: #a3b7d6;
-  --text-faint: #7e93ba;
+  /* Rarity-farver */
+  --legendary: #ffb23a;
+  --epic: #c26bff;
+  --rare: #3fb6ff;
+
+  --elim: #ff7b5c;
+  --dmg: #d38bff;
+  --gold: var(--legendary);
+  --gold-soft: rgba(255, 178, 58, 0.18);
+  --silver: var(--epic);
+  --bronze: var(--rare);
+  --danger: #ff4d6d;
+  --danger-soft: rgba(255, 77, 109, 0.14);
+
+  --text: #ffffff;
+  --text-dim: #c3d0ff;
+  --text-faint: #93a5e8;
+
+  --font-display: "Lilita One", "Arial Black", sans-serif;
+  --font-body: "Barlow", system-ui, sans-serif;
 
   --radius-s: 4px;
-  --radius-m: 8px;
-  --radius-l: 14px;
+  --radius-m: 6px;
+  --radius-l: 10px;
 }
 
 * { box-sizing: border-box; }
@@ -40,12 +53,23 @@ html, body {
 }
 
 body {
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: var(--font-body);
   min-height: 100vh;
+  font-synthesis: none;
   background:
-    radial-gradient(ellipse 900px 500px at 50% -10%, rgba(53, 216, 255, 0.10), transparent 60%),
-    repeating-linear-gradient(90deg, rgba(53, 216, 255, 0.025) 0px, rgba(53, 216, 255, 0.025) 1px, transparent 1px, transparent 84px),
-    var(--bg);
+    radial-gradient(ellipse 1100px 600px at 50% -15%, rgba(79, 214, 255, 0.45), transparent 60%),
+    radial-gradient(ellipse 900px 700px at 100% 110%, rgba(170, 60, 255, 0.45), transparent 60%),
+    radial-gradient(ellipse 700px 600px at 0% 100%, rgba(110, 40, 220, 0.35), transparent 60%),
+    linear-gradient(180deg, #1d4fd8 0%, #12258f 35%, #0a1240 100%);
+  background-attachment: fixed;
+}
+
+/* Fortnite-agtige overskrifter: tykke store bogstaver */
+.masthead-title, .panel-title, .gate-welcome-text, .pd-name, .lb-name,
+.session-card-name, .stat-board-title, .record-value, .lb-score {
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -57,6 +81,13 @@ body {
   max-width: 880px;
   margin: 0 auto;
   padding: 28px 20px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* Luft mellem panelerne inde i appen */
+#appRoot, #gamePanels, #statsPanels {
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -78,31 +109,33 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 1px;
-  background: linear-gradient(90deg, var(--accent-dim), var(--border-soft) 55%, transparent);
+  height: 3px;
+  background: linear-gradient(90deg, var(--yellow), var(--epic) 55%, transparent);
 }
 
 .masthead-title {
-  font-family: "Rajdhani", sans-serif;
-  font-weight: 700;
-  font-size: clamp(1.9rem, 5vw, 2.6rem);
-  letter-spacing: 0.02em;
-  line-height: 1;
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 7vw, 3.6rem);
+  line-height: 0.95;
   margin: 0;
   text-wrap: balance;
-  background: linear-gradient(180deg, #ffffff 0%, var(--accent) 140%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: #fff;
+  transform: skewX(-8deg);
+  transform-origin: left bottom;
+  text-shadow: 0 4px 0 #1a1f6b, 0 0 28px rgba(79, 214, 255, 0.55);
 }
 
 .masthead-sub {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--text-faint);
-  margin: 4px 0 0;
+  color: #1a1400;
+  background: var(--yellow);
+  padding: 3px 10px;
+  margin: 8px 0 0;
+  transform: skewX(-12deg);
 }
 
 .masthead-status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
@@ -131,21 +164,21 @@ body {
 /* ---------- Generic panel ---------- */
 .panel {
   background: var(--surface);
-  border: 1px solid var(--border-soft);
+  border: 2px solid var(--border);
   border-radius: var(--radius-l);
   padding: 20px;
-  box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.035) inset, 0 12px 32px -22px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 0 0 rgba(255, 255, 255, 0.12) inset, 0 6px 0 0 rgba(5, 8, 40, 0.55), 0 18px 40px -20px rgba(0, 0, 0, 0.9);
 }
 
 .panel-title {
-  font-family: "Rajdhani", sans-serif;
-  font-weight: 700;
-  font-size: 1.3rem;
-  letter-spacing: 0.01em;
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 1.55rem;
   margin: 0 0 4px;
-  padding-left: 12px;
-  border-left: 3px solid var(--accent-dim);
   color: var(--text);
+  transform: skewX(-6deg);
+  text-shadow: 0 3px 0 rgba(5, 8, 40, 0.7);
 }
 .panel-hint {
   font-size: 0.85rem;
@@ -158,7 +191,18 @@ input[type="text"], input[type="number"] {
   background: var(--surface-3);
   border: 1px solid var(--border);
   color: var(--text);
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  border-radius: var(--radius-s);
+  padding: 10px 12px;
+  outline: none;
+}
+input[type="password"] {
+  width: 100%;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-body);
   font-size: 0.95rem;
   border-radius: var(--radius-s);
   padding: 10px 12px;
@@ -175,9 +219,11 @@ input:focus-visible {
 input::placeholder { color: var(--text-faint); }
 
 button {
-  font-family: "Inter", sans-serif;
-  font-weight: 600;
-  font-size: 0.88rem;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   border-radius: var(--radius-s);
   padding: 10px 18px;
   border: 1px solid transparent;
@@ -191,22 +237,31 @@ button:focus-visible {
 }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* Gul, skrå knap som "Play"-knappen i lobbyen */
 .btn-primary {
-  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dim) 100%);
-  color: #04141c;
+  background: linear-gradient(180deg, #fff27a 0%, var(--yellow) 45%, var(--yellow-dark) 100%);
+  color: #1a1400;
   border: none;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.05rem;
+  padding: 10px 22px;
+  transform: skewX(-8deg);
+  box-shadow: 0 4px 0 0 #8a6400, 0 8px 18px -8px rgba(255, 228, 58, 0.7);
 }
 .btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.btn-primary:active:not(:disabled) { transform: skewX(-8deg) translateY(3px); box-shadow: 0 1px 0 0 #8a6400; }
 
 .btn-ghost {
-  background: rgba(163, 183, 214, 0.05);
-  border: 1px solid rgba(163, 183, 214, 0.3);
-  color: var(--text-dim);
+  background: rgba(20, 42, 138, 0.7);
+  border: 2px solid var(--border);
+  color: var(--text);
+  transform: skewX(-8deg);
 }
 .btn-ghost:hover:not(:disabled) {
-  border-color: var(--accent-dim);
+  border-color: var(--accent);
   color: var(--text);
-  background: var(--accent-soft);
+  background: var(--surface-3);
 }
 
 .btn-danger {
@@ -249,12 +304,12 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   border-radius: 50%;
   object-fit: cover;
   object-position: 50% 88%;
-  border: 3px solid var(--accent-dim);
-  box-shadow: 0 0 0 5px var(--accent-soft), 0 0 32px -6px var(--accent);
+  border: 4px solid var(--legendary);
+  box-shadow: 0 0 0 5px rgba(255, 178, 58, 0.25), 0 0 36px -4px var(--legendary);
   flex: none;
 }
 .gate-welcome-text {
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.4rem;
   color: var(--text);
@@ -289,7 +344,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   background: var(--surface-3);
 }
 .session-card-name {
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.05rem;
   color: var(--text);
@@ -344,9 +399,28 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   border-radius: var(--radius-m);
   padding: 14px 16px;
 }
+/* Top 3 som rarity-kort: Legendary, Epic, Rare */
 .lb-row.is-leader {
-  border-color: var(--accent-dim);
-  box-shadow: 0 0 0 1px var(--accent-dim), 0 0 24px -8px var(--accent);
+  border: 2px solid var(--legendary);
+  background: linear-gradient(100deg, #b8561a 0%, #e08a2a 30%, var(--surface-2) 75%);
+  box-shadow: 0 0 26px -6px var(--legendary);
+}
+.lb-row.is-second {
+  border: 2px solid var(--epic);
+  background: linear-gradient(100deg, #6a24c0 0%, #9a45e8 30%, var(--surface-2) 75%);
+}
+.lb-row.is-third {
+  border: 2px solid var(--rare);
+  background: linear-gradient(100deg, #1a5cc8 0%, #2d8ae8 30%, var(--surface-2) 75%);
+}
+.lb-row.is-leader .lb-rank, .lb-row.is-second .lb-rank, .lb-row.is-third .lb-rank {
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.lb-row.is-leader .lb-stats, .lb-row.is-second .lb-stats, .lb-row.is-third .lb-stats,
+.lb-row.is-leader .lb-stats span, .lb-row.is-second .lb-stats span, .lb-row.is-third .lb-stats span {
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
 }
 .lb-row.is-winner {
   border-color: var(--gold);
@@ -361,13 +435,11 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   color: var(--text-faint);
   text-align: center;
 }
-.lb-row.is-leader .lb-rank, .lb-row.is-winner .lb-rank { color: var(--gold); }
-.lb-row.is-second .lb-rank, .lb-row.is-second .lb-score { color: var(--silver); }
-.lb-row.is-third .lb-rank, .lb-row.is-third .lb-score { color: var(--bronze); }
+.lb-row.is-winner .lb-rank { color: var(--gold); }
 
 .lb-main { min-width: 0; }
 .lb-name {
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.15rem;
   color: var(--text);
@@ -380,18 +452,20 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 .lb-stats {
   display: flex;
-  gap: 14px;
+  flex-wrap: wrap;
+  gap: 2px 14px;
   margin-top: 4px;
   font-family: "JetBrains Mono", monospace;
   font-size: 0.75rem;
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
 }
+.lb-stats span { white-space: nowrap; }
 .lb-stats .elim { color: var(--elim); }
 .lb-stats .dmg { color: var(--dmg); }
 
 .lb-score {
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.6rem;
   color: var(--text);
@@ -399,8 +473,9 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   text-align: right;
   line-height: 1;
 }
-.lb-row.is-leader .lb-score, .lb-row.is-winner .lb-score { color: var(--gold); }
-.lb-score small { display:block; font-weight:500; font-size: 0.6rem; letter-spacing: 0.08em; color: var(--text-faint); text-transform: uppercase; font-family: "Inter", sans-serif; margin-top: 2px; }
+.lb-row.is-winner .lb-score { color: var(--gold); }
+.lb-row.is-leader .lb-score { color: var(--yellow); text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4); }
+.lb-score small { display:block; font-weight:500; font-size: 0.6rem; letter-spacing: 0.08em; color: var(--text-faint); text-transform: uppercase; font-family: var(--font-body); margin-top: 2px; }
 
 /* ---------- Round entry form ---------- */
 .round-table { width: 100%; border-collapse: collapse; }
@@ -416,7 +491,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .round-table th.num, .round-table td.num { text-align: center; width: 96px; }
 .round-table td { padding: 6px 8px; }
 .round-table td.name {
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: 1rem;
 }
@@ -474,7 +549,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 .match-card-head b {
   color: var(--gold);
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 0.95rem;
   letter-spacing: 0.01em;
@@ -490,7 +565,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   font-variant-numeric: tabular-nums;
 }
 .match-player-row .mp-name {
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-body);
   font-weight: 600;
   color: var(--text);
   font-size: 0.82rem;
@@ -561,7 +636,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .modal-close:hover { color: var(--text); }
 
 .pd-name {
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.6rem;
   margin: 0 0 4px;
@@ -632,7 +707,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.035) inset, 0 12px 32px -22px rgba(0, 0, 0, 0.8);
 }
 .stat-board-title {
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.02rem;
   color: var(--text);
@@ -704,7 +779,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   margin: 0 0 8px;
 }
 .record-value {
-  font-family: "Rajdhani", sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 2.1rem;
   line-height: 1;
