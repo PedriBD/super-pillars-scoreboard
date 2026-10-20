@@ -98,6 +98,7 @@ const statsPanels = document.getElementById("statsPanels");
 const statsBackBtn = document.getElementById("statsBackBtn");
 const statBoardGrid = document.getElementById("statBoardGrid");
 const recordGrid = document.getElementById("recordGrid");
+const podiumEl = document.getElementById("podium");
 
 /* ---------------- All-time standings ---------------- */
 function computeStandings() {
@@ -152,14 +153,14 @@ function computeStatBoards() {
   }
 
   return [
-    { title: "Flest kampe vundet", unit: "kampe vundet", rows: topBy("matchesWon"), key: "matchesWon", cls: "gold" },
-    { title: "Højeste sejrsrate", unit: "% sejre (min. 2 kampe)", rows: topBy("winRate", { minMatches: 2 }), key: "winRate", cls: "gold", suffix: "%", round: true },
-    { title: "Flest runde-sejre i alt", unit: "runde-sejre", rows: topBy("totalRoundWins"), key: "totalRoundWins", cls: "accent" },
-    { title: "Flest eliminations i alt", unit: "eliminations", rows: topBy("totalElim"), key: "totalElim", cls: "elim" },
-    { title: "Mest damage i alt", unit: "damage dealt", rows: topBy("totalDmg"), key: "totalDmg", cls: "dmg" },
-    { title: "Bedste snit eliminations", unit: "elim / kamp i snit", rows: topBy("avgElim"), key: "avgElim", cls: "elim", round1: true },
-    { title: "Bedste snit damage", unit: "damage / kamp i snit", rows: topBy("avgDmg"), key: "avgDmg", cls: "dmg", round: true },
-    { title: "Flest kampe spillet", unit: "kampe spillet", rows: topBy("matchesPlayed", { allowZero: true }), key: "matchesPlayed", cls: "" },
+    { icon: "🏆", title: "Flest kampe vundet", unit: "kampe vundet", rows: topBy("matchesWon"), key: "matchesWon", cls: "gold" },
+    { icon: "📈", title: "Højeste sejrsrate", unit: "% sejre (min. 2 kampe)", rows: topBy("winRate", { minMatches: 2 }), key: "winRate", cls: "gold", suffix: "%", round: true },
+    { icon: "🎯", title: "Flest runde-sejre i alt", unit: "runde-sejre", rows: topBy("totalRoundWins"), key: "totalRoundWins", cls: "accent" },
+    { icon: "⚔️", title: "Flest eliminations i alt", unit: "eliminations", rows: topBy("totalElim"), key: "totalElim", cls: "elim" },
+    { icon: "💥", title: "Mest damage i alt", unit: "damage dealt", rows: topBy("totalDmg"), key: "totalDmg", cls: "dmg" },
+    { icon: "🔪", title: "Bedste snit eliminations", unit: "elim / kamp i snit", rows: topBy("avgElim"), key: "avgElim", cls: "elim", round1: true },
+    { icon: "🔥", title: "Bedste snit damage", unit: "damage / kamp i snit", rows: topBy("avgDmg"), key: "avgDmg", cls: "dmg", round: true },
+    { icon: "🎮", title: "Flest kampe spillet", unit: "kampe spillet", rows: topBy("matchesPlayed", { allowZero: true }), key: "matchesPlayed", cls: "" },
   ];
 }
 
@@ -178,7 +179,21 @@ function computeRecords() {
     });
   });
 
-  return { bestElim, bestDmg, bestWins };
+  // Længste sejrsstime: flest kampe vundet i træk (kun kampe spilleren var med i)
+  let bestStreak = null;
+  const ordered = state.matches.slice().sort((a, b) => String(a.playedAt).localeCompare(String(b.playedAt)));
+  state.players.forEach((p) => {
+    let streak = 0;
+    ordered.forEach((m) => {
+      if (!m.results[p.id]) return;
+      streak = m.winnerId === p.id ? streak + 1 : 0;
+      if (streak > 0 && (!bestStreak || streak > bestStreak.value)) {
+        bestStreak = { value: streak, name: p.name, date: m.playedAt };
+      }
+    });
+  });
+
+  return { bestElim, bestDmg, bestWins, bestStreak };
 }
 
 /* ---------------- Sync ---------------- */
@@ -666,27 +681,58 @@ function formatStatValue(board, value) {
   return value.toLocaleString("da-DK");
 }
 
+function renderPodium() {
+  const top = computeStandings().filter((s) => s.matchesWon > 0).slice(0, 3);
+  if (top.length === 0) {
+    podiumEl.innerHTML = '<span class="stat-board-empty">Ingen kampe vundet endnu.</span>';
+    return;
+  }
+  // Vis i rækkefølgen 2 – 1 – 3, som et rigtigt podie
+  const places = [
+    { s: top[1], place: 2, cls: "epic" },
+    { s: top[0], place: 1, cls: "legendary" },
+    { s: top[2], place: 3, cls: "rare" },
+  ];
+  podiumEl.innerHTML = places
+    .map(({ s, place, cls }) =>
+      s
+        ? '<div class="podium-spot ' + cls + '">' +
+          (place === 1 ? '<span class="podium-crown">👑</span>' : "") +
+          '<p class="podium-name">' + escapeHtml(s.name) + "</p>" +
+          '<p class="podium-value">' + s.matchesWon + " " + (s.matchesWon === 1 ? "sejr" : "sejre") + "</p>" +
+          '<div class="podium-block">' + place + "</div>" +
+          "</div>"
+        : '<div class="podium-spot is-empty"></div>'
+    )
+    .join("");
+}
+
 function renderStats() {
+  renderPodium();
   const boards = computeStatBoards();
 
   statBoardGrid.innerHTML = boards
     .map((board) => {
+      const max = board.rows.length ? board.rows[0][board.key] : 0;
       const rowsHtml = board.rows.length
         ? board.rows
             .map(
               (p, i) =>
-                '<div class="stat-board-row">' +
-                '<span class="sbr-rank">' + (i + 1) + "</span>" +
+                '<div class="stat-board-row' + (i === 0 ? " is-top" : "") + '">' +
+                '<span class="sbr-rank">' + (i === 0 ? "👑" : i + 1) + "</span>" +
                 '<span class="sbr-name">' + escapeHtml(p.name) + "</span>" +
                 '<span class="sbr-value' + (board.cls ? " " + board.cls : "") + '">' +
                 formatStatValue(board, p[board.key]) + (board.suffix || "") +
-                "</span></div>"
+                "</span>" +
+                '<span class="sbr-bar' + (board.cls ? " " + board.cls : "") + '"><span style="width:' +
+                (max > 0 ? Math.max(4, Math.round((p[board.key] / max) * 100)) : 0) + '%"></span></span>' +
+                "</div>"
             )
             .join("")
         : '<span class="stat-board-empty">Ingen data endnu.</span>';
       return (
         '<div class="stat-board">' +
-        '<p class="stat-board-title">' + escapeHtml(board.title) + "</p>" +
+        '<p class="stat-board-title"><span class="stat-board-icon">' + board.icon + "</span>" + escapeHtml(board.title) + "</p>" +
         '<p class="stat-board-unit">' + escapeHtml(board.unit) + "</p>" +
         '<div class="stat-board-list">' + rowsHtml + "</div>" +
         "</div>"
@@ -696,19 +742,23 @@ function renderStats() {
 
   const records = computeRecords();
   const recordCards = [
-    { label: "Flest eliminations i én kamp", data: records.bestElim, cls: "elim" },
-    { label: "Mest damage i én kamp", data: records.bestDmg, cls: "dmg" },
-    { label: "Flest runde-sejre i én kamp", data: records.bestWins, cls: "gold" },
+    { icon: "⚔️", label: "Flest eliminations i én kamp", data: records.bestElim, cls: "elim" },
+    { icon: "💥", label: "Mest damage i én kamp", data: records.bestDmg, cls: "dmg" },
+    { icon: "🎯", label: "Flest runde-sejre i én kamp", data: records.bestWins, cls: "gold" },
+    { icon: "🔥", label: "Længste sejrsstime", data: records.bestStreak, cls: "streak", suffix: " i træk" },
   ];
   recordGrid.innerHTML = recordCards
     .map((r) =>
       r.data
-        ? '<div class="record-card">' +
+        ? '<div class="record-card ' + r.cls + '">' +
+          '<span class="record-icon">' + r.icon + "</span>" +
           '<p class="record-label">' + r.label + "</p>" +
-          '<p class="record-value ' + r.cls + '">' + r.data.value.toLocaleString("da-DK") + "</p>" +
-          '<p class="record-meta">' + escapeHtml(r.data.name) + " &middot; " + formatDateTime(r.data.date) + "</p>" +
+          '<p class="record-value">' + r.data.value.toLocaleString("da-DK") +
+          (r.suffix ? "<small>" + r.suffix + "</small>" : "") + "</p>" +
+          '<p class="record-holder">' + escapeHtml(r.data.name) + "</p>" +
+          '<p class="record-meta">' + formatDateTime(r.data.date) + "</p>" +
           "</div>"
-        : '<div class="record-card"><p class="record-label">' + r.label + '</p><p class="stat-board-empty">Ingen data endnu.</p></div>'
+        : '<div class="record-card ' + r.cls + ' is-empty"><span class="record-icon">' + r.icon + '</span><p class="record-label">' + r.label + '</p><p class="stat-board-empty">Ingen data endnu.</p></div>'
     )
     .join("");
 }
