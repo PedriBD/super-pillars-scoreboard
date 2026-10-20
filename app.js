@@ -1,4 +1,4 @@
-import { supabase } from "./supabase-config.js";
+import { supabase } from "./supabase-config.js?v=3";
 
 const DEFAULT_STATE = { players: [], matches: [] };
 const ROOM_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O or 1/I
