@@ -2,8 +2,6 @@
 
 Scoreboard til Fortnite-gamemoden Super Pillars. Version 2 er en React-app (Vite) med login (e-mail og adgangskode) og Supabase som database.
 
-> Version 2 er under opbygning på branchen `v2`. Den gamle side (branch `main`) kører videre på GitHub Pages, indtil v2 er klar.
-
 ## Sådan virker det
 
 - Man opretter en bruger med e-mail og adgangskode. Første gang skal man indtaste gruppekoden, så fremmede ikke kan se eller ændre data.
@@ -44,7 +42,7 @@ npm run dev
 
 ## Deploy
 
-`npm run build` laver en statisk side i `dist/`, som kan lægges på Vercel eller GitHub Pages.
+Siden ligger på https://pedribd.github.io/super-pillars-scoreboard/. Hver gang der pushes til `main`, bygger GitHub Actions appen og lægger den op automatisk (se `.github/workflows/deploy.yml`).
 
 ## Filer
 
