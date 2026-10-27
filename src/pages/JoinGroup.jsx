@@ -3,7 +3,7 @@ import { useAuth } from "../auth.jsx";
 import { supabase } from "../supabase.js";
 
 // Første gang en bruger logger ind, skal de indtaste gruppekoden.
-// Så kan fremmede med en Google-konto ikke se eller ændre jeres data.
+// Så kan fremmede, der opretter en bruger, ikke se eller ændre jeres data.
 export default function JoinGroup() {
   const { user, refresh } = useAuth();
   const [code, setCode] = useState("");

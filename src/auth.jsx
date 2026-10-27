@@ -66,11 +66,25 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-export function signInWithGoogle() {
-  return supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: window.location.origin + window.location.pathname },
-  });
+export function signIn(email, password) {
+  return supabase.auth.signInWithPassword({ email, password });
+}
+
+export function signUp(email, password) {
+  return supabase.auth.signUp({ email, password });
+}
+
+// Oversætter Supabases fejl til dansk
+export function authErrorText(error) {
+  const code = error?.code || "";
+  const msg = (error?.message || "").toLowerCase();
+  if (code === "invalid_credentials" || msg.includes("invalid login")) return "Forkert e-mail eller adgangskode.";
+  if (code === "user_already_exists" || msg.includes("already registered")) return "Der findes allerede en bruger med den e-mail. Log ind i stedet.";
+  if (code === "weak_password" || msg.includes("password should be")) return "Adgangskoden skal være mindst 6 tegn.";
+  if (code === "validation_failed" || msg.includes("invalid format") || msg.includes("email address")) return "Den e-mail ser ikke rigtig ud.";
+  if (code === "email_not_confirmed") return "Brugeren er ikke bekræftet endnu.";
+  if (code === "over_request_rate_limit" || msg.includes("rate limit")) return "For mange forsøg. Vent lidt og prøv igen.";
+  return "Noget gik galt. Prøv igen om lidt.";
 }
 
 export function signOut() {

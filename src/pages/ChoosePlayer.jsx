@@ -9,8 +9,8 @@ export default function ChoosePlayer() {
   const [guests, setGuests] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  const googleName = user?.user_metadata?.full_name || user?.user_metadata?.name || "";
-  const [name, setName] = useState(googleName);
+  const defaultName = user?.user_metadata?.full_name || user?.user_metadata?.name || "";
+  const [name, setName] = useState(defaultName);
 
   useEffect(() => {
     supabase
@@ -30,7 +30,7 @@ export default function ChoosePlayer() {
   }, []);
 
   async function claim(guest) {
-    if (!confirm(`Er du "${guest.name}"? Spilleren bliver koblet til din Google-konto.`)) return;
+    if (!confirm(`Er du "${guest.name}"? Spilleren bliver koblet til din bruger.`)) return;
     setBusy(true);
     const { error } = await supabase.rpc("claim_player", { p_guest: guest.id });
     setBusy(false);
@@ -86,7 +86,7 @@ export default function ChoosePlayer() {
 
       <section className="panel">
         <p className="panel-title">Jeg er ny</p>
-        <p className="panel-hint">Opret en ny spiller med dit navn og dit Google-profilbillede.</p>
+        <p className="panel-hint">Opret en ny spiller. Du kan tilføje et profilbillede bagefter.</p>
         <form className="join-row" onSubmit={createNew}>
           <input type="text" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="Dit spillernavn" />
           <button type="submit" className="btn-primary" disabled={busy}>Opret mig</button>

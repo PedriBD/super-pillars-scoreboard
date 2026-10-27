@@ -15,7 +15,7 @@ function initials(name) {
 export default function Avatar({ player, size = 40 }) {
   const style = { width: size, height: size, fontSize: size * 0.4 };
   if (player?.avatar_url) {
-    // no-referrer er nødvendigt for Googles profilbilleder
+    // no-referrer gør, at billeder fra fx Google også kan vises
     return <img className="avatar" src={player.avatar_url} alt="" style={style} referrerPolicy="no-referrer" />;
   }
   return (
