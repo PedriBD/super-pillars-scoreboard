@@ -13,6 +13,10 @@ Scoreboard til Fortnite-gamemoden Super Pillars. Version 2 er en React-app (Vite
 - **Statistik** viser podie, rekorder og ranglister på tværs af alle opgør. Hvert opgør har også sin egen statistik, og hver spillerprofil viser spillerens samlede tal.
 - Er den samme person oprettet to gange, lægges de sammen i SQL Editor med `select merge_players(<id der beholdes>, <id der fjernes>);`.
 
+## Som app på telefonen
+
+Åbn siden i Safari (iPhone) eller Chrome (Android) og vælg **Del → Føj til hjemmeskærm** / **Installer app**. Så åbner den i fuld skærm med sit eget ikon.
+
 ## Kør lokalt
 
 ```bash

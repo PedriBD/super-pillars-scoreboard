@@ -1057,3 +1057,14 @@ a.podium-spot { text-decoration: none; color: var(--text); }
   .join-row input, .player-add-row input { flex: 1 1 100%; }
   .join-row button, .player-add-row button { flex: 1 1 auto; }
 }
+
+/* Som app på hjemmeskærmen: hold indhold fri af notch og hjem-bjælke */
+.wrap {
+  padding-top: max(28px, env(safe-area-inset-top));
+  padding-bottom: max(80px, env(safe-area-inset-bottom));
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+}
+@media (max-width: 520px) {
+  .wrap { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+}
