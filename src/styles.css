@@ -1009,3 +1009,4 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   .masthead { align-items: flex-start; }
   .masthead-status { width: 100%; justify-content: space-between; }
 }
+.profile-head .pd-sub { margin: 2px 0 0; }

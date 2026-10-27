@@ -4,6 +4,7 @@ import { useAuth } from "../auth.jsx";
 import { supabase } from "../supabase.js";
 import { resizeImage } from "../lib/image.js";
 import Avatar from "../components/Avatar.jsx";
+import MergeGuests from "../components/MergeGuests.jsx";
 
 export default function Profile() {
   const { id } = useParams();
@@ -16,7 +17,10 @@ export default function Profile() {
   const [message, setMessage] = useState(null);
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase.from("players").select("*").eq("id", id).maybeSingle();
+    const { data, error } = await supabase
+      .from("players")
+      .select("*, session_players(sessions(name)), match_results(count)")
+      .eq("id", id).maybeSingle();
     if (error) {
       console.warn("Kunne ikke hente spilleren:", error);
       setMessage({ error: true, text: "Kunne ikke hente spilleren. Prøv igen om lidt." });
@@ -56,7 +60,7 @@ export default function Profile() {
       setMessage({ error: true, text: "Kunne ikke gemme ændringen. Prøv igen." });
       return false;
     }
-    setPlayer(data[0]);
+    setPlayer((prev) => ({ ...prev, ...data[0] }));
     setMessage({ text: okText });
     if (isMe) refresh();
     return true;
@@ -115,6 +119,11 @@ export default function Profile() {
           <p className="pd-sub">
             {isMe ? "Din profil" : isGuest ? "Gæst – ikke koblet til en bruger endnu" : "Spiller"}
           </p>
+          <p className="pd-sub">
+            {player.match_results?.[0]?.count ?? 0} kampe
+            {" · "}
+            {player.session_players?.map((sp) => sp.sessions?.name).filter(Boolean).join(", ") || "Ingen opgør"}
+          </p>
         </div>
       </section>
 
@@ -135,6 +144,15 @@ export default function Profile() {
           </div>
           {message && <p className={message.error ? "gate-error" : "save-ok"}>{message.text}</p>}
         </section>
+      )}
+
+      {isMe && (
+        <MergeGuests
+          onMerged={() => {
+            load();
+            refresh();
+          }}
+        />
       )}
 
       {isGuest && (
