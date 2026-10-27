@@ -1123,10 +1123,9 @@ button, .tab, .bottom-tab, .player-row, .session-card, .lb-row, .podium-spot {
     align-items: center;
     margin: 0 calc(-1 * var(--gutter));
     padding: calc(env(safe-area-inset-top) + 10px) var(--gutter) 10px;
-    background: rgba(18, 37, 143, 0.88);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, #1d4fd8 0%, #163aa8 100%);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 6px 16px -8px rgba(5, 8, 40, 0.8);
   }
   .app-header::after { display: none; }
   .app-header .masthead-title { font-size: 1.75rem; text-shadow: 0 3px 0 #1a1f6b; }
@@ -1145,9 +1144,7 @@ button, .tab, .bottom-tab, .player-row, .session-card, .lb-row, .podium-spot {
     bottom: 0;
     z-index: 50;
     padding: 6px 8px calc(4px + env(safe-area-inset-bottom));
-    background: rgba(10, 18, 64, 0.92);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
+    background: #0c1650;
     border-top: 2px solid rgba(255, 255, 255, 0.1);
   }
   .bottom-tab {
