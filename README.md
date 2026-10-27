@@ -1,122 +1,46 @@
 # Super Pillars Scoreboard
 
-Scoreboard-tracker til Fortnite-gamemoden Super Pillars. Statisk side (GitHub Pages) med [Supabase](https://supabase.com) som backend, så alle med spil-koden ser opdateringer i realtid på tværs af enheder.
+Scoreboard til Fortnite-gamemoden Super Pillars. Version 2 er en React-app (Vite) med Google-login og Supabase som database.
+
+> Version 2 er under opbygning på branchen `v2`. Den gamle side (branch `main`) kører videre på GitHub Pages, indtil v2 er klar.
 
 ## Sådan virker det
 
-- Hele siden er låst bag en fælles adgangskode (`DanskeMestre2026`). Adgangskoden tjekkes serverside i Supabase og huskes i browseren, så man kun skal indtaste den én gang pr. enhed.
-- Forsiden viser en liste over alle eksisterende opgør (fx "Fredagsgutterne", "Lørdagsturnering") — klik ind på ét, eller opret et nyt med et navn. Ingen koder at huske eller dele, siden hele siden allerede er beskyttet af adgangskoden.
-- Alle med adgangskoden ser samme liste og kan gå ind i et opgør og tilføje spillere til rosteret løbende.
-- Spillerrosteret er delt for hele opgøret, men det er ikke nødvendigvis de samme spillere hver kamp — i kamp-formularen afkrydser I hvem der faktisk var med denne gang, så kun deres stats og kamp-tælling opdateres.
-- I spiller en hel kamp i Fortnite selv (fx til en har vundet 15 runder), og først når kampen er helt slut, indtaster I slutresultatet: runde-sejre, eliminations og damage dealt pr. spiller. Der er ingen løbende runde-for-runde-indtastning undervejs.
-- Vinderen af kampen er den med flest runde-sejre (ved lighed afgør eliminations, dernæst damage).
-- Hver registreret kamp gemmes i kamp-historikken, og "All-time stilling" viser den samlede stilling — flest kampe vundet, flest runde-sejre, flest eliminations osv. — på tværs af alle kampe I nogensinde har spillet i det opgør.
-- Klik på en spiller i stillingen for at se deres detaljerede statistik: sejrsrate, snit runde-sejre/eliminations/damage pr. kamp, bedste enkeltkamp og en liste over deres seneste kampe.
+- Man logger ind med Google. Første gang skal man indtaste gruppekoden, så fremmede ikke kan se eller ændre data.
+- Derefter vælger man, hvilken af de eksisterende spillere man er, eller opretter sig som ny spiller.
+- Alle spillere findes på én fælles liste på tværs af opgør. Man kan ændre navn og profilbillede på sig selv og på gæster (spillere uden bruger).
+- Har man spillet under to navne, kan man lægge en gæst sammen med sin egen profil ("Det er også mig").
 
-## 1. Sæt Supabase op (gratis)
-
-1. Opret et projekt på [supabase.com](https://supabase.com).
-2. Gå til **SQL Editor** i projektet og kør:
-
-   ```sql
-   create table if not exists games (
-     room_code text primary key,
-     name text,
-     state jsonb not null,
-     updated_at timestamptz not null default now()
-   );
-
-   alter table games enable row level security;
-
-   create policy "public read" on games for select using (true);
-   create policy "public insert" on games for insert with check (true);
-   create policy "public update" on games for update using (true);
-   create policy "public delete" on games for delete using (true);
-
-   alter publication supabase_realtime add table games;
-   ```
-
-   Dette gør tabellen offentligt læs-/skrivbar (uden login) — det er adgangskoden på selve siden (næste punkt) der er den reelle beskyttelse, ikke hemmelige koder pr. opgør.
-
-   Har du allerede oprettet `games`-tabellen tidligere, skal du blot køre denne tilføjelse for at understøtte navngivne opgør og sletning:
-
-   ```sql
-   alter table games add column if not exists name text;
-   create policy "public delete" on games for delete using (true);
-   ```
-
-3. Kør derefter dette for adgangskode-beskyttelsen af selve siden (kør det i samme SQL Editor):
-
-   ```sql
-   create extension if not exists pgcrypto;
-
-   create table if not exists site_gate (
-     id int primary key default 1,
-     password_hash text not null,
-     check (id = 1)
-   );
-
-   insert into site_gate (id, password_hash)
-   values (1, crypt('DanskeMestre2026', gen_salt('bf')))
-   on conflict (id) do update set password_hash = excluded.password_hash;
-
-   alter table site_gate enable row level security;
-   -- Ingen policies tilføjes med vilje: tabellen er dermed helt utilgængelig
-   -- direkte for klienter, selv med RLS slået til. Kun funktionen herunder
-   -- (som kører med forhøjede rettigheder) kan læse den.
-
-   create or replace function check_site_password(pwd text)
-   returns boolean
-   language sql
-   security definer
-   set search_path = public, extensions
-   as $$
-     select exists (
-       select 1 from site_gate where id = 1 and password_hash = crypt(pwd, password_hash)
-     );
-   $$;
-
-   revoke all on function check_site_password(text) from public;
-   grant execute on function check_site_password(text) to anon, authenticated;
-   ```
-
-   Adgangskoden gemmes kun som et bcrypt-hash i databasen og bliver aldrig sendt til browseren — siden sender det indtastede ord til en Postgres-funktion, som svarer sandt/falsk. Vil du skifte adgangskode senere, kør blot `insert ... on conflict` linjen igen med en ny værdi.
-
-   Hvis `pgcrypto` fejler med en rettighedsfejl, så slå den til under **Database → Extensions** i Supabase-dashboardet i stedet, og kør resten af blokken igen.
-
-4. Under **Project Settings → API** finder du:
-   - **Project URL**
-   - **anon public key**
-
-5. Åbn [`supabase-config.js`](supabase-config.js) og indsæt dem:
-
-   ```js
-   const SUPABASE_URL = "https://xxxxxxxx.supabase.co";
-   const SUPABASE_ANON_KEY = "din-anon-key";
-   ```
-
-   Denne nøgle er beregnet til at ligge i klient-kode — det er Row Level Security-policyerne ovenfor der styrer adgang, ikke hemmeligholdelse af nøglen.
-
-## 2. Kør lokalt
-
-Fordi siden bruger ES modules, skal den serveres over http (ikke åbnes direkte som `file://`). Fra mappen:
+## Kør lokalt
 
 ```bash
-python3 -m http.server 8080
+npm install
+npm run dev
 ```
 
-Åbn `http://localhost:8080`.
+Åbn http://localhost:5173.
 
-## 3. Deploy til GitHub Pages
+## Opsætning af Supabase
 
-1. Push reposet til GitHub (se nedenfor).
-2. Gå til **Settings → Pages** i GitHub-reposet.
-3. Under **Build and deployment**, vælg **Deploy from a branch**, branch `main`, mappe `/ (root)`.
-4. Siden bliver tilgængelig på `https://<bruger>.github.io/<repo>/`.
+1. Kør [`supabase/migrations/001_v2_schema.sql`](supabase/migrations/001_v2_schema.sql) i SQL Editor. Den opretter tabeller, adgangsregler og lager til profilbilleder.
+2. Kør `select import_legacy_games();` for at kopiere opgør, spillere og kampe fra den gamle side. Den kan køres igen senere og springer allerede importerede kampe over.
+3. Gruppekoden er den samme som adgangskoden til den gamle side (tabellen `site_gate`).
+
+## Opsætning af Google-login
+
+1. Gå til [Google Cloud Console](https://console.cloud.google.com/apis/credentials), opret et projekt og et **OAuth client ID** af typen **Web application**.
+2. Under **Authorized redirect URIs** tilføjes: `https://ulunjtgszuuosyofkkfo.supabase.co/auth/v1/callback`
+3. I Supabase: **Authentication → Sign In / Providers → Google**. Slå den til og indsæt Client ID og Client Secret.
+4. I Supabase: **Authentication → URL Configuration**. Sæt **Site URL** til appens adresse, og tilføj `http://localhost:5173/**` og appens adresse under **Redirect URLs**.
+
+## Deploy
+
+`npm run build` laver en statisk side i `dist/`, som kan lægges på Vercel eller GitHub Pages.
 
 ## Filer
 
-- `index.html` — sidens struktur
-- `style.css` — udseende
-- `app.js` — spil-logik og Supabase-sync
-- `supabase-config.js` — dine Supabase-nøgler (indsæt dine egne, se ovenfor)
+- `src/App.jsx`: hvilken side der vises (login, gruppekode, vælg spiller eller selve appen)
+- `src/auth.jsx`: login og den indloggede brugers spiller
+- `src/pages/`: de enkelte sider
+- `src/styles.css`: designet
+- `supabase/migrations/`: databasens opbygning
