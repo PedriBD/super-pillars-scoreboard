@@ -26,13 +26,6 @@ export default function Players() {
 
   return (
     <>
-      <section className="panel notice">
-        <p className="panel-hint">
-          Den nye version er under opbygning. Opgør og kampe registreres indtil videre på{" "}
-          <a href="https://pedribd.github.io/super-pillars-scoreboard/">den gamle side</a>.
-        </p>
-      </section>
-
       <section className="panel">
         <p className="panel-title">Spillere</p>
         <p className="panel-hint">Alle spillere på tværs af opgør. Klik for at se profilen.</p>

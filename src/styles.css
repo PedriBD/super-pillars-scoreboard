@@ -1010,3 +1010,50 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   .masthead-status { width: 100%; justify-content: space-between; }
 }
 .profile-head .pd-sub { margin: 2px 0 0; }
+
+/* ================= v2: opgør og statistik ================= */
+
+.session-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 6vw, 2.4rem);
+  text-transform: uppercase;
+  line-height: 1;
+  margin: 0;
+  transform: skewX(-6deg);
+  text-shadow: 0 3px 0 rgba(5, 8, 40, 0.7);
+}
+.session-head .panel-hint { margin: 6px 0 14px; }
+
+a.session-card { text-decoration: none; color: var(--text); }
+
+.lb-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+a.podium-spot { text-decoration: none; color: var(--text); }
+.podium-spot .avatar { margin-bottom: 6px; }
+
+.player-chip { padding: 4px 8px 4px 4px; }
+.player-chip .btn-icon { padding: 0 4px; font-size: 1.1rem; }
+
+@media (max-width: 520px) {
+  .round-table th.num, .round-table td.num { width: 64px; }
+  .round-table td { padding-left: 4px; padding-right: 4px; }
+  .round-table input[type="number"] { padding: 10px 6px; text-align: center; }
+  .round-table td.name { font-size: 0.9rem; }
+}
+
+/* Mobil: faner på én linje, læsbare navne i stillingen, felter over knapper */
+@media (max-width: 520px) {
+  .tabs { gap: 6px; flex-wrap: nowrap; }
+  .tab { padding: 7px 10px; font-size: 0.85rem; white-space: nowrap; }
+  nav.tabs { overflow-x: auto; padding-bottom: 6px; }
+
+  .lb-row { grid-template-columns: 22px 1fr auto; gap: 10px; padding: 12px; }
+  .lb-name { font-size: 1rem; white-space: normal; align-items: flex-start; }
+  .lb-name-text { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .lb-score { font-size: 1.4rem; min-width: 0; }
+  .lb-score small { font-size: 0.55rem; }
+
+  .join-row, .player-add-row { flex-wrap: wrap; }
+  .join-row input, .player-add-row input { flex: 1 1 100%; }
+  .join-row button, .player-add-row button { flex: 1 1 auto; }
+}

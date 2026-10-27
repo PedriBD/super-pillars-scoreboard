@@ -4,6 +4,8 @@ import { useAuth } from "../auth.jsx";
 import { supabase } from "../supabase.js";
 import { resizeImage } from "../lib/image.js";
 import Avatar from "../components/Avatar.jsx";
+import PlayerStats from "../components/PlayerStats.jsx";
+import { fetchMatches } from "../lib/data.js";
 
 export default function Profile() {
   const { id } = useParams();
@@ -13,6 +15,7 @@ export default function Profile() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
+  const [matches, setMatches] = useState(null);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -31,6 +34,9 @@ export default function Profile() {
   useEffect(() => {
     setMessage(null);
     load();
+    fetchMatches()
+      .then(setMatches)
+      .catch((err) => console.warn("Kunne ikke hente kampe:", err));
   }, [load]);
 
   if (player === undefined) return <p className="panel-hint">{message?.text || "Indlæser…"}</p>;
@@ -38,7 +44,7 @@ export default function Profile() {
     return (
       <section className="panel">
         <p className="panel-hint">Spilleren findes ikke længere.</p>
-        <Link to="/">← Tilbage til spillere</Link>
+        <Link to="/spillere">← Tilbage til spillere</Link>
       </section>
     );
   }
@@ -127,9 +133,11 @@ export default function Profile() {
         </section>
       )}
 
+      {matches && <PlayerStats playerId={player.id} matches={matches} />}
+
       <div className="form-actions">
         <span></span>
-        <Link to="/" className="btn-ghost btn-link">← Alle spillere</Link>
+        <Link to="/spillere" className="btn-ghost btn-link">← Alle spillere</Link>
       </div>
     </>
   );

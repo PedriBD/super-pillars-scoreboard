@@ -1,10 +1,13 @@
-import { HashRouter, NavLink, Route, Routes } from "react-router-dom";
+import { HashRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { signOut, useAuth } from "./auth.jsx";
 import Avatar from "./components/Avatar.jsx";
 import Login from "./pages/Login.jsx";
 import JoinGroup from "./pages/JoinGroup.jsx";
 import ChoosePlayer from "./pages/ChoosePlayer.jsx";
 import Players from "./pages/Players.jsx";
+import Sessions from "./pages/Sessions.jsx";
+import Session from "./pages/Session.jsx";
+import GlobalStats from "./pages/GlobalStats.jsx";
 import Profile from "./pages/Profile.jsx";
 
 export default function App() {
@@ -21,7 +24,11 @@ export default function App() {
     <HashRouter>
       <Shell nav>
         <Routes>
-          <Route path="/" element={<Players />} />
+          <Route path="/" element={<Sessions />} />
+          <Route path="/opgor/:id" element={<Session />} />
+          <Route path="/opgor/:id/statistik" element={<Session />} />
+          <Route path="/statistik" element={<GlobalStats />} />
+          <Route path="/spillere" element={<Players />} />
           <Route path="/spiller/:id" element={<Profile />} />
         </Routes>
       </Shell>
@@ -50,14 +57,22 @@ function Shell({ nav, children }) {
           </div>
         )}
       </header>
-      {nav && (
-        <nav className="tabs">
-          <NavLink to="/" end className="tab">Spillere</NavLink>
-          <NavLink to={"/spiller/" + myPlayer.id} className="tab">Min profil</NavLink>
-        </nav>
-      )}
+      {nav && <Nav myPlayerId={myPlayer.id} />}
       {children}
     </div>
+  );
+}
+
+function Nav({ myPlayerId }) {
+  const { pathname } = useLocation();
+  const playerPage = pathname.startsWith("/spiller/") && pathname !== "/spiller/" + myPlayerId;
+  return (
+    <nav className="tabs">
+      <NavLink to="/" className={"tab" + (pathname === "/" || pathname.startsWith("/opgor") ? " active" : "")}>Opgør</NavLink>
+      <NavLink to="/statistik" className="tab">Statistik</NavLink>
+      <NavLink to="/spillere" className={"tab" + (pathname === "/spillere" || playerPage ? " active" : "")}>Spillere</NavLink>
+      <NavLink to={"/spiller/" + myPlayerId} className="tab">Min profil</NavLink>
+    </nav>
   );
 }
 
