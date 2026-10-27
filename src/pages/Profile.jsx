@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useAuth } from "../auth.jsx";
+import { signOut, useAuth } from "../auth.jsx";
 import { supabase } from "../supabase.js";
 import { resizeImage } from "../lib/image.js";
 import Avatar from "../components/Avatar.jsx";
@@ -136,7 +136,11 @@ export default function Profile() {
       {matches && <PlayerStats playerId={player.id} matches={matches} />}
 
       <div className="form-actions">
-        <span></span>
+        {isMe ? (
+          <button type="button" className="btn-danger" onClick={signOut}>Log ud</button>
+        ) : (
+          <span></span>
+        )}
         <Link to="/spillere" className="btn-ghost btn-link">← Alle spillere</Link>
       </div>
     </>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "../auth.jsx";
+import { signOut, useAuth } from "../auth.jsx";
 import { supabase } from "../supabase.js";
 
 // Første gang en bruger logger ind, skal de indtaste gruppekoden.
@@ -39,6 +39,7 @@ export default function JoinGroup() {
         <button type="submit" className="btn-primary" disabled={busy}>Fortsæt</button>
       </form>
       {error && <p className="gate-error">{error}</p>}
+      <button type="button" className="btn-link-plain" onClick={signOut}>Log ud</button>
     </section>
   );
 }

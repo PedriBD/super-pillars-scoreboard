@@ -911,7 +911,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   font-size: 0.9rem;
   max-width: 180px;
 }
-.me-chip span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.me-chip .me-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
 .tab {
@@ -1067,4 +1067,103 @@ a.podium-spot { text-decoration: none; color: var(--text); }
 }
 @media (max-width: 520px) {
   .wrap { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+}
+
+/* ================= iPhone-app: menubar i bunden og kompakt topbjælke ================= */
+
+html { -webkit-text-size-adjust: 100%; }
+body { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
+button, .tab, .bottom-tab, .player-row, .session-card, .lb-row, .podium-spot {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.wrap { --gutter: 20px; }
+@media (max-width: 520px) { .wrap { --gutter: 16px; } }
+
+/* Farvet baggrund bag iPhonens statuslinje, så indhold ikke ses bag klokken */
+.statusbar-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: #1d4fd8;
+  z-index: 60;
+}
+
+.app-header .me-chip { text-decoration: none; color: var(--text); }
+.bottom-nav { display: none; }
+
+.btn-link-plain {
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  text-decoration: underline;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 8px;
+}
+
+@media (max-width: 700px) {
+  /* iPhone zoomer ind på felter med tekst under 16px */
+  input, select, textarea { font-size: 16px !important; }
+
+  .wrap.has-nav { padding-top: 0; padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    flex-wrap: nowrap;
+    align-items: center;
+    margin: 0 calc(-1 * var(--gutter));
+    padding: calc(env(safe-area-inset-top) + 10px) var(--gutter) 10px;
+    background: rgba(18, 37, 143, 0.88);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+  }
+  .app-header::after { display: none; }
+  .app-header .masthead-title { font-size: 1.75rem; text-shadow: 0 3px 0 #1a1f6b; }
+  .app-header .masthead-sub { font-size: 0.6rem; padding: 2px 8px; margin-top: 4px; }
+  .app-header .me-name { display: none; }
+  /* Topbjælken dækker selv statuslinjen inde i appen */
+  .has-nav .statusbar-bg { display: none; }
+
+  .top-nav { display: none; }
+
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    padding: 6px 8px calc(4px + env(safe-area-inset-bottom));
+    background: rgba(10, 18, 64, 0.92);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+  }
+  .bottom-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 0 4px;
+    text-decoration: none;
+    color: var(--text-faint);
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .bottom-tab.active { color: var(--yellow); }
+  .bottom-tab.active svg { filter: drop-shadow(0 0 8px rgba(255, 228, 58, 0.6)); }
 }

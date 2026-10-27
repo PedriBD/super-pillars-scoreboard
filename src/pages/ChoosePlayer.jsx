@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../auth.jsx";
+import { signOut, useAuth } from "../auth.jsx";
 import { supabase } from "../supabase.js";
 import Avatar from "../components/Avatar.jsx";
 
@@ -94,6 +94,7 @@ export default function ChoosePlayer() {
       </section>
 
       {error && <p className="gate-error">{error}</p>}
+      <button type="button" className="btn-link-plain" onClick={signOut}>Log ud</button>
     </>
   );
 }
