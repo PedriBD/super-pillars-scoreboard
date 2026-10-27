@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../auth.jsx";
 import { supabase } from "../supabase.js";
 import { resizeImage } from "../lib/image.js";
 import Avatar from "../components/Avatar.jsx";
-import MergeGuests from "../components/MergeGuests.jsx";
 
 export default function Profile() {
   const { id } = useParams();
   const { user, refresh } = useAuth();
-  const navigate = useNavigate();
   const fileInput = useRef(null);
   const [player, setPlayer] = useState(undefined);
   const [name, setName] = useState("");
@@ -93,23 +91,6 @@ export default function Profile() {
     }
   }
 
-  async function handleClaim() {
-    const ok = confirm(
-      `Er "${player.name}" også dig? Kampe og statistik fra "${player.name}" bliver lagt sammen med din profil, og gæsten forsvinder. Det kan ikke fortrydes.`
-    );
-    if (!ok) return;
-    setBusy(true);
-    const { data, error } = await supabase.rpc("claim_player", { p_guest: player.id });
-    setBusy(false);
-    if (error) {
-      console.warn("Sammenlægning fejlede:", error);
-      setMessage({ error: true, text: "Kunne ikke lægge spillerne sammen. Prøv igen." });
-      return;
-    }
-    refresh();
-    navigate("/spiller/" + data);
-  }
-
   return (
     <>
       <section className="panel profile-head">
@@ -143,27 +124,6 @@ export default function Profile() {
             <input ref={fileInput} type="file" accept="image/*" hidden onChange={handleFile} />
           </div>
           {message && <p className={message.error ? "gate-error" : "save-ok"}>{message.text}</p>}
-        </section>
-      )}
-
-      {isMe && (
-        <MergeGuests
-          onMerged={() => {
-            load();
-            refresh();
-          }}
-        />
-      )}
-
-      {isGuest && (
-        <section className="panel">
-          <p className="panel-title">Er det også dig?</p>
-          <p className="panel-hint">
-            Har du spillet under et andet navn i et andet opgør, kan du lægge den spiller sammen med din profil.
-          </p>
-          <button type="button" className="btn-ghost" onClick={handleClaim} disabled={busy}>
-            Det er også mig – læg sammen
-          </button>
         </section>
       )}
 

@@ -9,7 +9,7 @@ Scoreboard til Fortnite-gamemoden Super Pillars. Version 2 er en React-app (Vite
 - Man opretter en bruger med e-mail og adgangskode. Første gang skal man indtaste gruppekoden, så fremmede ikke kan se eller ændre data.
 - Derefter vælger man, hvilken af de eksisterende spillere man er, eller opretter sig som ny spiller.
 - Alle spillere findes på én fælles liste på tværs af opgør. Man kan ændre navn og profilbillede på sig selv og på gæster (spillere uden bruger).
-- Har man spillet under to navne, kan man lægge en gæst sammen med sin egen profil ("Det er også mig").
+- Er den samme person oprettet to gange, lægges de sammen i SQL Editor med `select merge_players(<id der beholdes>, <id der fjernes>);`.
 
 ## Kør lokalt
 
