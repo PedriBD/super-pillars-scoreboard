@@ -752,6 +752,10 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .record-card.dmg { background: linear-gradient(135deg, #c26bff 0%, #5a1fb0 100%); }
 .record-card.gold { background: linear-gradient(135deg, #ffc65a 0%, #c8611c 100%); }
 .record-card.streak { background: linear-gradient(135deg, #4fd6ff 0%, #1f4fd8 100%); }
+.record-card.shame-elim { background: linear-gradient(135deg, #8a9a4a 0%, #3e4a1e 100%); }
+.record-card.shame-dmg { background: linear-gradient(135deg, #8c7a68 0%, #43352a 100%); }
+.record-card.shame-wins { background: linear-gradient(135deg, #7a6f9a 0%, #33294f 100%); }
+.record-card.shame-streak { background: linear-gradient(135deg, #8a3a4a 0%, #2e0f1a 100%); }
 .record-card.is-empty { filter: saturate(0.35); opacity: 0.75; }
 .record-icon {
   position: absolute;

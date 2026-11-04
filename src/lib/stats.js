@@ -89,6 +89,39 @@ export function computeRecords(players, matches) {
   return { bestElim, bestDmg, bestWins, bestStreak };
 }
 
+// Skamrekorder: de dårligste præstationer i én kamp og den længste stime uden sejr.
+// Ved lighed vinder den, der skete først.
+export function computeWorstRecords(players, matches) {
+  const byId = {};
+  players.forEach((p) => { byId[p.id] = p; });
+
+  let worstElim = null, worstDmg = null, worstWins = null;
+  matches.forEach((m) => {
+    Object.entries(m.results).forEach(([pid, r]) => {
+      if (!byId[pid]) return;
+      if (!worstElim || r.elim < worstElim.value) worstElim = { value: r.elim, player: byId[pid], date: m.playedAt };
+      if (!worstDmg || r.dmg < worstDmg.value) worstDmg = { value: r.dmg, player: byId[pid], date: m.playedAt };
+      if (!worstWins || r.roundWins < worstWins.value) worstWins = { value: r.roundWins, player: byId[pid], date: m.playedAt };
+    });
+  });
+
+  // Længste stime uden sejr: flest kampe i træk uden at vinde
+  let worstStreak = null;
+  const ordered = matches.slice().sort((a, b) => String(a.playedAt).localeCompare(String(b.playedAt)));
+  players.forEach((p) => {
+    let streak = 0;
+    ordered.forEach((m) => {
+      if (!m.results[p.id]) return;
+      streak = m.winnerId === p.id ? 0 : streak + 1;
+      if (streak > 0 && (!worstStreak || streak > worstStreak.value)) {
+        worstStreak = { value: streak, player: p, date: m.playedAt };
+      }
+    });
+  });
+
+  return { worstElim, worstDmg, worstWins, worstStreak };
+}
+
 export function computePlayerDetail(playerId, matches) {
   const playerMatches = matches
     .filter((m) => m.results[playerId])

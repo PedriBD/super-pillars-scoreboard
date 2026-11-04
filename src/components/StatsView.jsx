@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { computeRecords, computeStandings, computeStatBoards, formatDateTime } from "../lib/stats.js";
+import { computeRecords, computeStandings, computeWorstRecords, computeStatBoards, formatDateTime } from "../lib/stats.js";
 import Avatar from "./Avatar.jsx";
 
 // Podie, rekorder og ranglister for en given samling spillere og kampe.
@@ -16,6 +16,12 @@ export default function StatsView({ players, matches }) {
         <p className="panel-title">Rekorder</p>
         <p className="panel-hint">De bedste præstationer nogensinde.</p>
         <Records players={players} matches={matches} />
+      </section>
+
+      <section className="panel">
+        <p className="panel-title">Skamrekorder</p>
+        <p className="panel-hint">De dårligste præstationer nogensinde. Dem vil ingen have.</p>
+        <WorstRecords players={players} matches={matches} />
       </section>
 
       <div className="stat-board-grid">
@@ -57,12 +63,25 @@ function Podium({ players, matches }) {
 
 function Records({ players, matches }) {
   const records = computeRecords(players, matches);
-  const cards = [
+  return <RecordGrid cards={[
     { icon: "⚔️", label: "Flest eliminations i én kamp", data: records.bestElim, cls: "elim" },
     { icon: "💥", label: "Mest damage i én kamp", data: records.bestDmg, cls: "dmg" },
     { icon: "🎯", label: "Flest runde-sejre i én kamp", data: records.bestWins, cls: "gold" },
     { icon: "🔥", label: "Længste sejrsstime", data: records.bestStreak, cls: "streak", suffix: " i træk" },
-  ];
+  ]} />;
+}
+
+function WorstRecords({ players, matches }) {
+  const records = computeWorstRecords(players, matches);
+  return <RecordGrid cards={[
+    { icon: "🐌", label: "Færrest eliminations i én kamp", data: records.worstElim, cls: "shame-elim" },
+    { icon: "🪶", label: "Mindst damage i én kamp", data: records.worstDmg, cls: "shame-dmg" },
+    { icon: "🥔", label: "Færrest runde-sejre i én kamp", data: records.worstWins, cls: "shame-wins" },
+    { icon: "💀", label: "Længste stime uden sejr", data: records.worstStreak, cls: "shame-streak", suffix: " i træk" },
+  ]} />;
+}
+
+function RecordGrid({ cards }) {
   return (
     <div className="record-grid">
       {cards.map((r) => (
