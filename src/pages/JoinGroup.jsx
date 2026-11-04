@@ -17,7 +17,9 @@ export default function JoinGroup() {
     setError(null);
     const { data, error } = await supabase.rpc("join_with_code", { code });
     setBusy(false);
-    if (error) {
+    if (error?.message?.includes("For mange forsøg")) {
+      setError("For mange forkerte forsøg. Vent en time, og prøv igen.");
+    } else if (error) {
       console.warn("Gruppekode fejlede:", error);
       setError("Noget gik galt. Prøv igen om lidt.");
     } else if (data !== true) {
