@@ -28,7 +28,7 @@ export default function Players() {
     <>
       <section className="panel">
         <p className="panel-title">Spillere</p>
-        <p className="panel-hint">Alle spillere på tværs af opgør. Klik for at se profilen.</p>
+        <p className="panel-hint">Alle spillere. Klik for at se profilen.</p>
         {error && <p className="gate-error">{error}</p>}
         {players === null && !error && <p className="panel-hint">Indlæser…</p>}
         <div className="player-list">

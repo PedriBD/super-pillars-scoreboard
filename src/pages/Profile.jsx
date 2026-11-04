@@ -20,7 +20,7 @@ export default function Profile() {
   const load = useCallback(async () => {
     const { data, error } = await supabase
       .from("players")
-      .select("*, session_players(sessions(name)), match_results(count)")
+      .select("*, match_results(count)")
       .eq("id", id).maybeSingle();
     if (error) {
       console.warn("Kunne ikke hente spilleren:", error);
@@ -108,8 +108,6 @@ export default function Profile() {
           </p>
           <p className="pd-sub">
             {player.match_results?.[0]?.count ?? 0} kampe
-            {" · "}
-            {player.session_players?.map((sp) => sp.sessions?.name).filter(Boolean).join(", ") || "Ingen opgør"}
           </p>
         </div>
       </section>

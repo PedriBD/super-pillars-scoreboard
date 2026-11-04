@@ -15,7 +15,7 @@ export default function ChoosePlayer() {
   useEffect(() => {
     supabase
       .from("players")
-      .select("id, name, avatar_url, session_players(sessions(name))")
+      .select("id, name, avatar_url, match_results(count)")
       .is("user_id", null)
       .order("name")
       .then(({ data, error }) => {
@@ -75,7 +75,7 @@ export default function ChoosePlayer() {
               <span className="player-row-main">
                 <span className="player-row-name">{g.name}</span>
                 <span className="player-row-meta">
-                  {g.session_players.map((sp) => sp.sessions?.name).filter(Boolean).join(", ") || "Ingen opgør"}
+                  {g.match_results?.[0]?.count ?? 0} kampe
                 </span>
               </span>
               <span className="player-row-action">Det er mig</span>

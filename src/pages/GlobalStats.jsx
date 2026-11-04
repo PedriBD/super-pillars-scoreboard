@@ -3,7 +3,7 @@ import { fetchMatches, fetchPlayers } from "../lib/data.js";
 import StatsView from "../components/StatsView.jsx";
 import Leaderboard from "../components/Leaderboard.jsx";
 
-// Fælles statistik på tværs af alle opgør.
+// Statistik over alle kampe.
 export default function GlobalStats() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -24,14 +24,12 @@ export default function GlobalStats() {
   if (error) return <p className="gate-error">{error}</p>;
   if (!data) return <p className="panel-hint loading">Indlæser…</p>;
 
-  const sessionCount = new Set(data.matches.map((m) => m.sessionId)).size;
-
   return (
     <>
       <section className="panel">
-        <p className="panel-title">Fælles statistik</p>
+        <p className="panel-title">Statistik</p>
         <p className="panel-hint">
-          På tværs af alle opgør: {data.matches.length} kampe i {sessionCount} opgør.
+          {data.matches.length} kampe i alt.
         </p>
         <Leaderboard players={data.players} matches={data.matches} />
       </section>

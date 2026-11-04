@@ -6,9 +6,9 @@ Scoreboard til Fortnite-gamemoden Super Pillars. Version 2 er en React-app (Vite
 
 - Man opretter en bruger med e-mail og adgangskode. Første gang skal man indtaste gruppekoden, så fremmede ikke kan se eller ændre data.
 - Derefter vælger man, hvilken af de eksisterende spillere man er, eller opretter sig som ny spiller.
-- Alle spillere findes på én fælles liste på tværs af opgør. Man kan ændre navn og profilbillede på sig selv og på gæster (spillere uden bruger).
-- Opgør, kampe og stilling virker som på den gamle side, og opdateres live, når andre registrerer kampe.
-- **Statistik** viser podie, rekorder og ranglister på tværs af alle opgør. Hvert opgør har også sin egen statistik, og hver spillerprofil viser spillerens samlede tal.
+- Der er ét fælles scoreboard med alle spillere og alle kampe. Man kan ændre navn og profilbillede på sig selv og på gæster (spillere uden bruger).
+- Kampe og stilling opdateres live, når andre registrerer kampe.
+- **Statistik** viser podie, rekorder og ranglister over alle kampe, og hver spillerprofil viser spillerens samlede tal.
 - Er den samme person oprettet to gange, lægges de sammen i SQL Editor med `select merge_players(<id der beholdes>, <id der fjernes>);`.
 
 ## Som app på telefonen
@@ -28,7 +28,8 @@ npm run dev
 
 1. Kør [`supabase/migrations/001_v2_schema.sql`](supabase/migrations/001_v2_schema.sql) i SQL Editor. Den opretter tabeller, adgangsregler og lager til profilbilleder.
 2. Kør `select import_legacy_games();` for at kopiere opgør, spillere og kampe fra den gamle side. Den kan køres igen senere og springer allerede importerede kampe over.
-3. Gruppekoden er den samme som adgangskoden til den gamle side (tabellen `site_gate`).
+3. Kør `supabase/migrations/003_one_session.sql`, som lægger alle opgør sammen til ét.
+4. Gruppekoden er den samme som adgangskoden til den gamle side (tabellen `site_gate`).
 
 ## Opsætning af login
 

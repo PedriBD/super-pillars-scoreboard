@@ -1,5 +1,4 @@
 // Statistik beregnet ud fra en liste af spillere og kampe (se fetchMatches).
-// Bruges både i et enkelt opgør og på tværs af alle opgør.
 
 export function computeStandings(players, matches) {
   const byId = {};

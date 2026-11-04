@@ -1,24 +1,31 @@
 import { supabase } from "../supabase.js";
 
-// Henter kampe (evt. kun fra ét opgør) og omformer dem til en simpel struktur:
-// { id, sessionId, playedAt, winnerId, results: { [playerId]: { roundWins, elim, dmg } } }
-export async function fetchMatches(sessionId) {
-  let query = supabase
+// Henter alle kampe og omformer dem til en simpel struktur:
+// { id, playedAt, winnerId, results: { [playerId]: { roundWins, elim, dmg } } }
+export async function fetchMatches() {
+  const { data, error } = await supabase
     .from("matches")
-    .select("id, session_id, played_at, winner_id, match_results(player_id, round_wins, elim, dmg)")
+    .select("id, played_at, winner_id, match_results(player_id, round_wins, elim, dmg)")
     .order("played_at", { ascending: true });
-  if (sessionId) query = query.eq("session_id", sessionId);
-  const { data, error } = await query;
   if (error) throw error;
   return data.map((m) => ({
     id: m.id,
-    sessionId: m.session_id,
     playedAt: m.played_at,
     winnerId: m.winner_id,
     results: Object.fromEntries(
       m.match_results.map((r) => [r.player_id, { roundWins: r.round_wins, elim: r.elim, dmg: r.dmg }])
     ),
   }));
+}
+
+// Der er kun ét fælles opgør. Findes det ikke endnu, oprettes det.
+export async function fetchMainSessionId() {
+  const { data, error } = await supabase.from("sessions").select("id").order("created_at").limit(1).maybeSingle();
+  if (error) throw error;
+  if (data) return data.id;
+  const { data: created, error: createError } = await supabase.from("sessions").insert({ name: "Pillars" }).select("id").single();
+  if (createError) throw createError;
+  return created.id;
 }
 
 export async function fetchPlayers() {
